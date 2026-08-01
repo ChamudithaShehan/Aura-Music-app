@@ -154,6 +154,16 @@ fun MainAppContent(
         }
     )
 
+    // Notification Permission Handling (Android 13+)
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        val notificationPermissionState = rememberPermissionState(permission = Manifest.permission.POST_NOTIFICATIONS)
+        LaunchedEffect(Unit) {
+            if (!notificationPermissionState.status.isGranted) {
+                notificationPermissionState.launchPermissionRequest()
+            }
+        }
+    }
+
     val bottomBarRoutes = listOf(Screen.Home, Screen.Library, Screen.Equalizer, Screen.Search, Screen.Settings)
     val showBottomBar = currentRoute in bottomBarRoutes
 

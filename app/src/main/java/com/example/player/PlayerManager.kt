@@ -1,7 +1,9 @@
 package com.example.player
 
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
+import androidx.core.content.ContextCompat
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
@@ -36,6 +38,8 @@ class PlayerManager(
 
     val exoPlayer: ExoPlayer = ExoPlayer.Builder(context)
         .setAudioAttributes(audioAttributes, true)
+        .setHandleAudioBecomingNoisy(true)
+        .setWakeMode(C.WAKE_MODE_LOCAL)
         .build().apply {
             repeatMode = Player.REPEAT_MODE_OFF
             shuffleModeEnabled = false
@@ -121,7 +125,17 @@ class PlayerManager(
         }
     }
 
+    private fun startPlaybackService() {
+        try {
+            val intent = Intent(context, PlaybackService::class.java)
+            ContextCompat.startForegroundService(context, intent)
+        } catch (e: Exception) {
+            android.util.Log.e("PlayerManager", "Error starting PlaybackService", e)
+        }
+    }
+
     fun playSong(song: Song, newQueue: List<Song> = listOf(song)) {
+        startPlaybackService()
         _queue.value = newQueue
         val index = newQueue.indexOfFirst { it.id == song.id }
         
@@ -135,6 +149,8 @@ class PlayerManager(
                         .setArtist(s.artist)
                         .setAlbumTitle(s.album)
                         .setArtworkUri(s.albumArtUri?.let { Uri.parse(it) })
+                        .setIsPlayable(true)
+                        .setFolderType(MediaMetadata.FOLDER_TYPE_NONE)
                         .build()
                 )
                 .build()
