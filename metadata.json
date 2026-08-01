@@ -1,0 +1,6 @@
+{
+  "name": "Aura Music",
+  "description": "A modern, premium Android Music Player with glassmorphic UI, audio visualizer, lyrics, equalizer, and background playback.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

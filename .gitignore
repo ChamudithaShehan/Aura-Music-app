@@ -1,0 +1,47 @@
+# Gradle files
+.gradle/
+build/
+
+# Android Studio / IntelliJ files
+*.iml
+.idea/
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/gradle.xml
+.idea/assetWizardSettings.xml
+.idea/dictionaries
+.idea/libraries
+.idea/caches
+.idea/navEditor.xml
+.idea/modules.xml
+.idea/deploymentTargetDropDown.xml
+*.ipr
+*.iws
+
+# Android specific
+local.properties
+captures/
+.externalNativeBuild
+.cxx/
+output.json
+
+# Signing files
+*.jks
+*.keystore
+!debug.keystore
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Kotlin
+.kotlin/
+*.artifacts/
+
+# Logs
+*.log

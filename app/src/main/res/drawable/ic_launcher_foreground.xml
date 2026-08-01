@@ -1,0 +1,23 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Aura glowing outer circle -->
+    <path
+        android:pathData="M54,24 A30,30 0 1,0 54,84 A30,30 0 1,0 54,24 Z"
+        android:strokeWidth="3"
+        android:strokeColor="#80BB86FC">
+    </path>
+    <path
+        android:pathData="M54,29 A25,25 0 1,0 54,79 A25,25 0 1,0 54,29 Z"
+        android:strokeWidth="1.5"
+        android:strokeColor="#B000E5FF">
+    </path>
+    <!-- Music note -->
+    <path
+        android:pathData="M61,36 L61,58.5 C59.2,57.5 56.9,57 54.5,57 C48.7,57 44,61.0 44,66 C44,71.0 48.7,75 54.5,75 C60.3,75 65,71.0 65,66 L65,44 L75,44 L75,36 L61,36 Z"
+        android:fillColor="#FFFFFF">
+    </path>
+</vector>
