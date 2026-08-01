@@ -1,70 +1,39 @@
 package com.example
 
 import android.Manifest
-import android.content.pm.PackageManager
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.ui.components.ImmersiveBackground
-
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Equalizer
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.LibraryMusic
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
-import androidx.core.content.ContextCompat
-import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
-import com.example.domain.model.Playlist
+import androidx.navigation.NavDeepLink
+import androidx.navigation.compose.*
+import androidx.navigation.navDeepLink
 import com.example.domain.model.Song
-import com.example.ui.components.AddToPlaylistDialog
-import com.example.ui.components.CreatePlaylistDialog
-import com.example.ui.components.MiniPlayerBar
-import com.example.ui.components.SleepTimerDialog
-import com.example.ui.components.TagEditorDialog
+import com.example.ui.components.*
+import com.example.ui.navigation.NavigationActions
+import com.example.ui.navigation.Screen
 import com.example.ui.screens.equalizer.EqualizerScreen
 import com.example.ui.screens.home.HomeScreen
 import com.example.ui.screens.library.LibraryScreen
@@ -74,11 +43,7 @@ import com.example.ui.screens.privacy.PrivacyPolicyScreen
 import com.example.ui.screens.search.SearchScreen
 import com.example.ui.screens.settings.SettingsScreen
 import com.example.ui.theme.AuraMusicTheme
-import com.example.ui.viewmodel.EqualizerViewModel
-import com.example.ui.viewmodel.MusicViewModel
-import com.example.ui.viewmodel.PlayerViewModel
-import com.example.ui.viewmodel.SettingsViewModel
-import com.example.ui.viewmodel.ViewModelFactory
+import com.example.ui.viewmodel.*
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 
@@ -87,10 +52,10 @@ class MainActivity : ComponentActivity() {
     private val auraApp: AuraApplication
         get() = applicationContext as AuraApplication
 
-    private val musicViewModel: MusicViewModel by viewModels { ViewModelFactory(auraApp.appContainer) }
-    private val playerViewModel: PlayerViewModel by viewModels { ViewModelFactory(auraApp.appContainer) }
-    private val equalizerViewModel: EqualizerViewModel by viewModels { ViewModelFactory(auraApp.appContainer) }
-    private val settingsViewModel: SettingsViewModel by viewModels { ViewModelFactory(auraApp.appContainer) }
+    private val musicViewModel: MusicViewModel by viewModels { ViewModelFactory(auraApp.appContainer, this) }
+    private val playerViewModel: PlayerViewModel by viewModels { ViewModelFactory(auraApp.appContainer, this) }
+    private val equalizerViewModel: EqualizerViewModel by viewModels { ViewModelFactory(auraApp.appContainer, this) }
+    private val settingsViewModel: SettingsViewModel by viewModels { ViewModelFactory(auraApp.appContainer, this) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -118,8 +83,10 @@ fun MainAppContent(
     equalizerViewModel: EqualizerViewModel,
     settingsViewModel: SettingsViewModel
 ) {
-    val context = LocalContext.current
     val navController = rememberNavController()
+    val navActions = remember(navController) { NavigationActions(navController) }
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route ?: Screen.Home
 
     // State collections
     val allSongs by musicViewModel.allSongs.collectAsState()
@@ -148,6 +115,9 @@ fun MainAppContent(
 
     val equalizerState by equalizerViewModel.equalizerState.collectAsState()
     val allPresetNames by equalizerViewModel.allPresetNames.collectAsState()
+    val visualizerBands by equalizerViewModel.visualizerBands.collectAsState()
+    val waveform by equalizerViewModel.waveform.collectAsState()
+    val rms by equalizerViewModel.rms.collectAsState()
     val themeMode by settingsViewModel.themeMode.collectAsState()
 
     val userEmail by settingsViewModel.userEmail.collectAsState()
@@ -163,16 +133,14 @@ fun MainAppContent(
     val pauseOnDisconnect by settingsViewModel.pauseOnDisconnect.collectAsState()
     val lockscreenArt by settingsViewModel.lockscreenArt.collectAsState()
 
-    // Dialog & Screen Expansion states
-    var isFullPlayerExpanded by remember { mutableStateOf(false) }
-    var selectedLibraryTab by remember { mutableStateOf("SONGS") }
-
-    var showCreatePlaylistDialog by remember { mutableStateOf(false) }
+    // Dialog & UI states (preserved during configuration changes)
+    var selectedLibraryTab by rememberSaveable { mutableStateOf("SONGS") }
+    var showCreatePlaylistDialog by rememberSaveable { mutableStateOf(false) }
     var songToAddToPlaylist by remember { mutableStateOf<Song?>(null) }
     var songToEditTags by remember { mutableStateOf<Song?>(null) }
-    var showSleepTimerDialog by remember { mutableStateOf(false) }
+    var showSleepTimerDialog by rememberSaveable { mutableStateOf(false) }
 
-    // Accompanist Permission State Flow
+    // Permission Handling
     val audioPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         Manifest.permission.READ_MEDIA_AUDIO
     } else {
@@ -182,20 +150,18 @@ fun MainAppContent(
     val permissionState = rememberPermissionState(
         permission = audioPermission,
         onPermissionResult = { isGranted ->
-            if (isGranted) {
-                musicViewModel.rescanLibrary()
-            }
+            if (isGranted) musicViewModel.rescanLibrary()
         }
     )
 
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry?.destination?.route ?: "home"
+    val bottomBarRoutes = listOf(Screen.Home, Screen.Library, Screen.Equalizer, Screen.Search, Screen.Settings)
+    val showBottomBar = currentRoute in bottomBarRoutes
 
     ImmersiveBackground {
         Scaffold(
             containerColor = Color.Transparent,
             bottomBar = {
-                if (!isFullPlayerExpanded && currentRoute in listOf("home", "library", "equalizer", "search", "settings")) {
+                if (showBottomBar) {
                     Box(
                         modifier = Modifier
                             .navigationBarsPadding()
@@ -208,32 +174,22 @@ fun MainAppContent(
                             contentColor = Color.White
                         ) {
                             val navItems = listOf(
-                                Triple("home", "Home", Icons.Default.Home),
-                                Triple("library", "Library", Icons.Default.LibraryMusic),
-                                Triple("equalizer", "Equalizer", Icons.Default.Equalizer),
-                                Triple("search", "Search", Icons.Default.Search),
-                                Triple("settings", "Settings", Icons.Default.Settings)
+                                Triple(Screen.Home, "Home", Icons.Default.Home),
+                                Triple(Screen.Library, "Library", Icons.Default.LibraryMusic),
+                                Triple(Screen.Equalizer, "Equalizer", Icons.Default.Equalizer),
+                                Triple(Screen.Search, "Search", Icons.Default.Search),
+                                Triple(Screen.Settings, "Settings", Icons.Default.Settings)
                             )
 
                             navItems.forEach { (route, title, icon) ->
                                 NavigationBarItem(
                                     selected = currentRoute == route,
-                                    onClick = {
-                                        navController.navigate(route) {
-                                            popUpTo(navController.graph.findStartDestination().id) {
-                                                saveState = true
-                                            }
-                                            launchSingleTop = true
-                                            restoreState = true
-                                        }
-                                    },
+                                    onClick = { navActions.navigateToTopLevelDestination(route) },
                                     icon = { Icon(imageVector = icon, contentDescription = title) },
                                     label = {
                                         Text(
                                             text = title,
                                             maxLines = 1,
-                                            softWrap = false,
-                                            overflow = TextOverflow.Ellipsis,
                                             style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp)
                                         )
                                     },
@@ -257,12 +213,16 @@ fun MainAppContent(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Screen Navigation Host
             NavHost(
                 navController = navController,
-                startDestination = "home"
+                startDestination = Screen.Home,
+                enterTransition = { fadeIn(animationSpec = tween(300)) },
+                exitTransition = { fadeOut(animationSpec = tween(300)) }
             ) {
-                composable("home") {
+                composable(
+                    route = Screen.Home,
+                    deepLinks = listOf(navDeepLink { uriPattern = "aura://home" })
+                ) {
                     HomeScreen(
                         allSongs = allSongs,
                         recentlyPlayed = recentlyPlayed,
@@ -276,23 +236,23 @@ fun MainAppContent(
                         onEditTagsClick = { song -> songToEditTags = song },
                         onDeleteClick = { song -> musicViewModel.deleteSong(song.id) },
                         onRescanClick = {
-                            if (permissionState.status.isGranted) {
-                                musicViewModel.rescanLibrary()
-                            } else {
-                                permissionState.launchPermissionRequest()
-                            }
+                            if (permissionState.status.isGranted) musicViewModel.rescanLibrary()
+                            else permissionState.launchPermissionRequest()
                         },
                         onNavigateToLibraryTab = { tab ->
                             selectedLibraryTab = tab
-                            navController.navigate("library")
+                            navActions.navigateToTopLevelDestination(Screen.Library)
                         },
-                        onNavigateToEqualizer = { navController.navigate("equalizer") },
-                        onNavigateToSearch = { navController.navigate("search") },
+                        onNavigateToEqualizer = { navActions.navigateToTopLevelDestination(Screen.Equalizer) },
+                        onNavigateToSearch = { navActions.navigateToTopLevelDestination(Screen.Search) },
                         permissionState = permissionState
                     )
                 }
 
-                composable("library") {
+                composable(
+                    route = Screen.Library,
+                    deepLinks = listOf(navDeepLink { uriPattern = "aura://library" })
+                ) {
                     LibraryScreen(
                         allSongs = allSongs,
                         albums = albums,
@@ -303,24 +263,30 @@ fun MainAppContent(
                         favoriteSongs = favoriteSongs,
                         currentSong = currentSong,
                         initialTab = selectedLibraryTab,
-                        getPlaylistSongs = { playlistId -> musicViewModel.getPlaylistSongs(playlistId) },
+                        getPlaylistSongs = { musicViewModel.getPlaylistSongs(it) },
                         onSongClick = { song, queue -> playerViewModel.playSong(song, queue) },
                         onToggleFavorite = { song -> musicViewModel.toggleFavorite(song) },
                         onAddToPlaylistClick = { song -> songToAddToPlaylist = song },
                         onEditTagsClick = { song -> songToEditTags = song },
                         onDeleteClick = { song -> musicViewModel.deleteSong(song.id) },
                         onCreatePlaylistClick = { showCreatePlaylistDialog = true },
-                        onRenamePlaylist = { playlistId, newName -> musicViewModel.renamePlaylist(playlistId, newName) },
-                        onDeletePlaylist = { playlistId -> musicViewModel.deletePlaylist(playlistId) },
-                        onRemoveSongFromPlaylist = { playlistId, songId -> musicViewModel.removeSongFromPlaylist(playlistId, songId) },
+                        onRenamePlaylist = { id, name -> musicViewModel.renamePlaylist(id, name) },
+                        onDeletePlaylist = { musicViewModel.deletePlaylist(it) },
+                        onRemoveSongFromPlaylist = { pid, sid -> musicViewModel.removeSongFromPlaylist(pid, sid) },
                         permissionState = permissionState
                     )
                 }
 
-                composable("equalizer") {
+                composable(
+                    route = Screen.Equalizer,
+                    deepLinks = listOf(navDeepLink { uriPattern = "aura://equalizer" })
+                ) {
                     EqualizerScreen(
                         equalizerState = equalizerState,
                         allPresets = allPresetNames,
+                        visualizerBands = visualizerBands,
+                        waveform = waveform,
+                        rms = rms,
                         onToggleMaster = { equalizerViewModel.toggleMaster(it) },
                         onSelectPreset = { equalizerViewModel.selectPreset(it) },
                         onBandLevelChange = { index, level -> equalizerViewModel.setBandLevel(index, level) },
@@ -336,7 +302,10 @@ fun MainAppContent(
                     )
                 }
 
-                composable("search") {
+                composable(
+                    route = Screen.Search,
+                    deepLinks = listOf(navDeepLink { uriPattern = "aura://search" })
+                ) {
                     SearchScreen(
                         searchQuery = searchQuery,
                         searchResults = searchResults,
@@ -353,7 +322,10 @@ fun MainAppContent(
                     )
                 }
 
-                composable("settings") {
+                composable(
+                    route = Screen.Settings,
+                    deepLinks = listOf(navDeepLink { uriPattern = "aura://settings" })
+                ) {
                     SettingsScreen(
                         themeMode = themeMode,
                         sleepTimerRemainingSec = sleepTimerRemainingSec,
@@ -370,10 +342,10 @@ fun MainAppContent(
                         lockscreenArt = lockscreenArt,
                         onSetThemeMode = { settingsViewModel.setThemeMode(it) },
                         onRescanClick = { musicViewModel.rescanLibrary() },
-                        onNavigateToPrivacyPolicy = { navController.navigate("privacy") },
+                        onNavigateToPrivacyPolicy = { navActions.navigateTo(Screen.Privacy) },
                         onStartSleepTimer = { playerViewModel.startSleepTimer(it) },
                         onCancelSleepTimer = { playerViewModel.cancelSleepTimer() },
-                        onLoginGoogleAccount = { email -> settingsViewModel.loginGoogleAccount(email) },
+                        onLoginGoogleAccount = { settingsViewModel.loginGoogleAccount(it) },
                         onLogoutGoogleAccount = { settingsViewModel.logoutGoogleAccount() },
                         onPerformBackup = { settingsViewModel.performBackup() },
                         onPerformRestore = { settingsViewModel.performRestore() },
@@ -382,30 +354,65 @@ fun MainAppContent(
                         onSetCrossfadeSeconds = { settingsViewModel.setCrossfadeSeconds(it) },
                         onSetPauseOnDisconnect = { settingsViewModel.setPauseOnDisconnect(it) },
                         onSetLockscreenArt = { settingsViewModel.setLockscreenArt(it) },
-                        onBackClick = { navController.popBackStack() }
+                        onBackClick = { navActions.popBack() }
                     )
                 }
 
-                composable("lyrics") {
+                composable(
+                    route = Screen.Player,
+                    deepLinks = listOf(navDeepLink { uriPattern = "aura://player" }),
+                    enterTransition = { slideInVertically(initialOffsetY = { it }) },
+                    exitTransition = { slideOutVertically(targetOffsetY = { it }) }
+                ) {
+                    FullPlayerScreen(
+                        song = currentSong,
+                        isPlaying = isPlaying,
+                        progressMs = currentPositionMs,
+                        durationMs = durationMs,
+                        shuffleModeEnabled = shuffleModeEnabled,
+                        repeatMode = repeatMode,
+                        playbackSpeed = playbackSpeed,
+                        visualizerBands = visualizerBands,
+                        rms = rms,
+                        onPlayPauseClick = { playerViewModel.togglePlayPause() },
+                        onNextClick = { playerViewModel.nextSong() },
+                        onPreviousClick = { playerViewModel.previousSong() },
+                        onSeekTo = { playerViewModel.seekTo(it) },
+                        onToggleShuffle = { playerViewModel.toggleShuffle() },
+                        onCycleRepeatMode = { playerViewModel.cycleRepeatMode() },
+                        onToggleFavorite = { playerViewModel.toggleFavoriteCurrentSong() },
+                        onSpeedChange = { playerViewModel.setPlaybackSpeed(it) },
+                        onOpenLyricsClick = { navActions.navigateTo(Screen.Lyrics) },
+                        onOpenSleepTimerClick = { showSleepTimerDialog = true },
+                        onOpenEqualizerClick = { navActions.navigateToTopLevelDestination(Screen.Equalizer) },
+                        onCloseClick = { navActions.popBack() }
+                    )
+                }
+
+                composable(
+                    route = Screen.Lyrics,
+                    deepLinks = listOf(navDeepLink { uriPattern = "aura://lyrics" })
+                ) {
                     LyricsScreen(
                         song = currentSong,
                         parsedLyrics = parsedLyrics,
                         currentPositionMs = currentPositionMs,
                         onSaveLyrics = { playerViewModel.saveLyricsForCurrentSong(it) },
                         onSeekTo = { playerViewModel.seekTo(it) },
-                        onBackClick = { navController.popBackStack() }
+                        onBackClick = { navActions.popBack() }
                     )
                 }
 
-                composable("privacy") {
-                    PrivacyPolicyScreen(
-                        onBackClick = { navController.popBackStack() }
-                    )
+                composable(
+                    route = Screen.Privacy,
+                    deepLinks = listOf(navDeepLink { uriPattern = "aura://privacy" })
+                ) {
+                    PrivacyPolicyScreen(onBackClick = { navActions.popBack() })
                 }
             }
 
-            // Bottom Mini Player Overlay
-            if (currentSong != null && !isFullPlayerExpanded && currentRoute != "lyrics") {
+            // Mini Player - Only shown when a song is loaded and NOT on the Player screen
+            if (currentSong != null && currentRoute != Screen.Player && currentRoute != Screen.Lyrics) {
                 MiniPlayerBar(
                     song = currentSong,
                     isPlaying = isPlaying,
@@ -413,61 +420,20 @@ fun MainAppContent(
                     durationMs = durationMs,
                     onPlayPauseClick = { playerViewModel.togglePlayPause() },
                     onNextClick = { playerViewModel.nextSong() },
-                    onExpandClick = { isFullPlayerExpanded = true },
+                    onExpandClick = { navActions.navigateTo(Screen.Player) },
                     onDismiss = { playerViewModel.stopPlayback() },
                     modifier = Modifier.align(Alignment.BottomCenter)
-                )
-            }
-
-            // Expanded Full Player Modal Sheet
-            AnimatedVisibility(
-                visible = isFullPlayerExpanded,
-                enter = slideInVertically { it } + fadeIn(),
-                exit = slideOutVertically { it } + fadeOut(),
-                modifier = Modifier.fillMaxSize()
-            ) {
-                val visualizerBands by playerViewModel.visualizerBands.collectAsState()
-                FullPlayerScreen(
-                    song = currentSong,
-                    isPlaying = isPlaying,
-                    progressMs = currentPositionMs,
-                    durationMs = durationMs,
-                    shuffleModeEnabled = shuffleModeEnabled,
-                    repeatMode = repeatMode,
-                    playbackSpeed = playbackSpeed,
-                    visualizerBands = visualizerBands,
-                    onPlayPauseClick = { playerViewModel.togglePlayPause() },
-                    onNextClick = { playerViewModel.nextSong() },
-                    onPreviousClick = { playerViewModel.previousSong() },
-                    onSeekTo = { playerViewModel.seekTo(it) },
-                    onToggleShuffle = { playerViewModel.toggleShuffle() },
-                    onCycleRepeatMode = { playerViewModel.cycleRepeatMode() },
-                    onToggleFavorite = { playerViewModel.toggleFavoriteCurrentSong() },
-                    onSpeedChange = { playerViewModel.setPlaybackSpeed(it) },
-                    onOpenLyricsClick = {
-                        isFullPlayerExpanded = false
-                        navController.navigate("lyrics")
-                    },
-                    onOpenSleepTimerClick = { showSleepTimerDialog = true },
-                    onOpenEqualizerClick = {
-                        isFullPlayerExpanded = false
-                        navController.navigate("equalizer")
-                    },
-                    onCloseClick = { isFullPlayerExpanded = false }
                 )
             }
         }
     }
     }
 
-    // Dialog Overlays
+    // Dialogs
     if (showCreatePlaylistDialog) {
         CreatePlaylistDialog(
             onDismiss = { showCreatePlaylistDialog = false },
-            onCreate = { name ->
-                musicViewModel.createPlaylist(name)
-                showCreatePlaylistDialog = false
-            }
+            onCreate = { musicViewModel.createPlaylist(it); showCreatePlaylistDialog = false }
         )
     }
 
@@ -476,14 +442,8 @@ fun MainAppContent(
             song = song,
             playlists = playlists,
             onDismiss = { songToAddToPlaylist = null },
-            onSelectPlaylist = { playlist ->
-                musicViewModel.addSongToPlaylist(playlist.id, song.id)
-                songToAddToPlaylist = null
-            },
-            onCreateNewPlaylistClick = {
-                songToAddToPlaylist = null
-                showCreatePlaylistDialog = true
-            }
+            onSelectPlaylist = { musicViewModel.addSongToPlaylist(it.id, song.id); songToAddToPlaylist = null },
+            onCreateNewPlaylistClick = { songToAddToPlaylist = null; showCreatePlaylistDialog = true }
         )
     }
 
@@ -491,10 +451,7 @@ fun MainAppContent(
         TagEditorDialog(
             song = song,
             onDismiss = { songToEditTags = null },
-            onSave = { title, artist, album, genre ->
-                musicViewModel.updateMetadata(song.id, title, artist, album, genre)
-                songToEditTags = null
-            }
+            onSave = { t, a, al, g -> musicViewModel.updateMetadata(song.id, t, a, al, g); songToEditTags = null }
         )
     }
 
@@ -502,15 +459,8 @@ fun MainAppContent(
         SleepTimerDialog(
             activeRemainingSec = sleepTimerRemainingSec,
             onDismiss = { showSleepTimerDialog = false },
-            onSetTimer = { mins ->
-                playerViewModel.startSleepTimer(mins)
-                showSleepTimerDialog = false
-            },
-            onCancelTimer = {
-                playerViewModel.cancelSleepTimer()
-                showSleepTimerDialog = false
-            }
+            onSetTimer = { playerViewModel.startSleepTimer(it); showSleepTimerDialog = false },
+            onCancelTimer = { playerViewModel.cancelSleepTimer(); showSleepTimerDialog = false }
         )
     }
 }
-

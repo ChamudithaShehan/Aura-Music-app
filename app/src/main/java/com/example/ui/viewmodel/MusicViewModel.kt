@@ -1,5 +1,6 @@
 package com.example.ui.viewmodel
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.repository.MusicRepository
@@ -9,16 +10,19 @@ import com.example.domain.model.Folder
 import com.example.domain.model.Genre
 import com.example.domain.model.Playlist
 import com.example.domain.model.Song
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
+@OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
 class MusicViewModel(
-    private val musicRepository: MusicRepository
+    private val musicRepository: MusicRepository,
+    private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
+
+    private val _searchQuery = savedStateHandle.getStateFlow("search_query", "")
+    val searchQuery: StateFlow<String> = _searchQuery
 
     val allSongs: StateFlow<List<Song>> = musicRepository.getAllSongs()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -53,23 +57,16 @@ class MusicViewModel(
     val recentSearches: StateFlow<List<String>> = musicRepository.getRecentSearches()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    private val _searchQuery = MutableStateFlow("")
-    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
-
-    private val _searchResults = MutableStateFlow<List<Song>>(emptyList())
-    val searchResults: StateFlow<List<Song>> = _searchResults.asStateFlow()
+    val searchResults: StateFlow<List<Song>> = _searchQuery
+        .debounce(300)
+        .flatMapLatest { query ->
+            if (query.isBlank()) flowOf(emptyList())
+            else musicRepository.searchSongs(query)
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun setSearchQuery(query: String) {
-        _searchQuery.value = query
-        if (query.isBlank()) {
-            _searchResults.value = emptyList()
-        } else {
-            viewModelScope.launch {
-                musicRepository.searchSongs(query).collect { results ->
-                    _searchResults.value = results
-                }
-            }
-        }
+        savedStateHandle["search_query"] = query
     }
 
     fun submitSearch(query: String) {
@@ -114,7 +111,7 @@ class MusicViewModel(
         }
     }
 
-    fun getPlaylistSongs(playlistId: Long): kotlinx.coroutines.flow.Flow<List<Song>> {
+    fun getPlaylistSongs(playlistId: Long): Flow<List<Song>> {
         return musicRepository.getPlaylistSongs(playlistId)
     }
 

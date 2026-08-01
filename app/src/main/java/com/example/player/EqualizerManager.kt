@@ -1,7 +1,6 @@
 package com.example.player
 
 import android.content.Context
-import android.media.audiofx.AudioEffect
 import android.media.audiofx.BassBoost
 import android.media.audiofx.Equalizer
 import android.media.audiofx.LoudnessEnhancer
@@ -31,68 +30,102 @@ class EqualizerManager(private val context: Context) {
         
         try {
             equalizer = Equalizer(0, sessionId)
-            bassBoost = BassBoost(0, sessionId)
-            virtualizer = Virtualizer(0, sessionId)
-            loudnessEnhancer = LoudnessEnhancer(sessionId)
-            
-            applyState(_state.value)
         } catch (e: Exception) {
-            Log.e("EqualizerManager", "Error initializing audio effects", e)
+            Log.e("EqualizerManager", "Error initializing Equalizer", e)
+            equalizer = null
         }
+
+        try {
+            bassBoost = BassBoost(0, sessionId)
+        } catch (e: Exception) {
+            Log.e("EqualizerManager", "Error initializing BassBoost", e)
+            bassBoost = null
+        }
+
+        try {
+            virtualizer = Virtualizer(0, sessionId)
+        } catch (e: Exception) {
+            Log.e("EqualizerManager", "Error initializing Virtualizer", e)
+            virtualizer = null
+        }
+
+        try {
+            loudnessEnhancer = LoudnessEnhancer(sessionId)
+        } catch (e: Exception) {
+            Log.e("EqualizerManager", "Error initializing LoudnessEnhancer", e)
+            loudnessEnhancer = null
+        }
+
+        applyState(_state.value)
     }
 
     fun applyState(newState: AudioEqualizerState) {
         _state.value = newState
-        
-        val eq = equalizer ?: return
-        val bb = bassBoost ?: return
-        val virt = virtualizer ?: return
-        val le = loudnessEnhancer ?: return
+        val enabled = newState.isEnabled
 
-        try {
-            val enabled = newState.isEnabled
-            
-            eq.enabled = enabled
-            if (enabled) {
-                val numBands = eq.numberOfBands.toInt()
-                val bandRange = eq.bandLevelRange
-                val minLevel = bandRange[0].toInt()
-                val maxLevel = bandRange[1].toInt()
-                
-                newState.bandLevels.forEachIndexed { index, level ->
-                    if (index < numBands) {
-                        // Level is in dB, convert to milliBel
-                        val milliBel = (level * 100).coerceIn(minLevel, maxLevel).toShort()
-                        eq.setBandLevel(index.toShort(), milliBel)
+        equalizer?.let { eq ->
+            try {
+                eq.enabled = enabled
+                if (enabled) {
+                    val numBands = eq.numberOfBands.toInt()
+                    val bandRange = eq.bandLevelRange
+                    val minLevel = bandRange[0].toInt()
+                    val maxLevel = bandRange[1].toInt()
+
+                    val maxBoost = newState.bandLevels.maxOrNull() ?: 0
+                    val headroomOffset = if (maxBoost > 0) -maxBoost * 50 else 0 // in milliBels
+
+                    newState.bandLevels.forEachIndexed { index, level ->
+                        if (index < numBands) {
+                            val milliBel = (level * 100 + headroomOffset).coerceIn(minLevel, maxLevel).toShort()
+                            eq.setBandLevel(index.toShort(), milliBel)
+                        }
                     }
                 }
+            } catch (e: Exception) {
+                Log.e("EqualizerManager", "Error applying Equalizer state", e)
             }
+        }
 
-            bb.enabled = enabled && newState.bassBoostEnabled
-            if (bb.enabled) {
-                bb.setStrength(newState.bassBoostStrength.toShort())
+        bassBoost?.let { bb ->
+            try {
+                bb.enabled = enabled && newState.bassBoostEnabled
+                if (bb.enabled && bb.strengthSupported) {
+                    bb.setStrength(newState.bassBoostStrength.toShort())
+                }
+            } catch (e: Exception) {
+                Log.e("EqualizerManager", "Error applying BassBoost state", e)
             }
+        }
 
-            virt.enabled = enabled && newState.virtualizerEnabled
-            if (virt.enabled) {
-                virt.setStrength(newState.virtualizerStrength.toShort())
+        virtualizer?.let { virt ->
+            try {
+                virt.enabled = enabled && newState.virtualizerEnabled
+                if (virt.enabled && virt.strengthSupported) {
+                    virt.setStrength(newState.virtualizerStrength.toShort())
+                }
+            } catch (e: Exception) {
+                Log.e("EqualizerManager", "Error applying Virtualizer state", e)
             }
+        }
 
-            le.enabled = enabled && newState.loudnessEnabled
-            if (le.enabled) {
-                le.setTargetGain(newState.loudnessGain)
+        loudnessEnhancer?.let { le ->
+            try {
+                le.enabled = enabled && newState.loudnessEnabled
+                if (le.enabled) {
+                    le.setTargetGain(newState.loudnessGain.coerceAtMost(800))
+                }
+            } catch (e: Exception) {
+                Log.e("EqualizerManager", "Error applying LoudnessEnhancer state", e)
             }
-            
-        } catch (e: Exception) {
-            Log.e("EqualizerManager", "Error applying equalizer state", e)
         }
     }
 
     fun release() {
-        equalizer?.release()
-        bassBoost?.release()
-        virtualizer?.release()
-        loudnessEnhancer?.release()
+        try { equalizer?.release() } catch (e: Exception) { Log.e("EqualizerManager", "Error releasing Equalizer", e) }
+        try { bassBoost?.release() } catch (e: Exception) { Log.e("EqualizerManager", "Error releasing BassBoost", e) }
+        try { virtualizer?.release() } catch (e: Exception) { Log.e("EqualizerManager", "Error releasing Virtualizer", e) }
+        try { loudnessEnhancer?.release() } catch (e: Exception) { Log.e("EqualizerManager", "Error releasing LoudnessEnhancer", e) }
         
         equalizer = null
         bassBoost = null

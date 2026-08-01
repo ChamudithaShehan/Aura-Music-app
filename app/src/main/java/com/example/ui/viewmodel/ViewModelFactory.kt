@@ -1,16 +1,25 @@
 package com.example.ui.viewmodel
 
+import androidx.lifecycle.AbstractSavedStateViewModelFactory
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
+import androidx.savedstate.SavedStateRegistryOwner
 import com.example.di.AppContainer
 
-class ViewModelFactory(private val appContainer: AppContainer) : ViewModelProvider.Factory {
+class ViewModelFactory(
+    private val appContainer: AppContainer,
+    owner: SavedStateRegistryOwner
+) : AbstractSavedStateViewModelFactory(owner, null) {
 
     @Suppress("UNCHECKED_CAST")
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+    override fun <T : ViewModel> create(
+        key: String,
+        modelClass: Class<T>,
+        handle: SavedStateHandle
+    ): T {
         return when {
             modelClass.isAssignableFrom(MusicViewModel::class.java) -> {
-                MusicViewModel(appContainer.musicRepository) as T
+                MusicViewModel(appContainer.musicRepository, handle) as T
             }
             modelClass.isAssignableFrom(PlayerViewModel::class.java) -> {
                 PlayerViewModel(appContainer.playerManager, appContainer.musicRepository) as T

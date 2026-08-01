@@ -1,57 +1,21 @@
 package com.example.ui.screens.player
 
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBarsPadding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Equalizer
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.GraphicEq
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.Lyrics
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.MusicNote
-import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.QueueMusic
-import androidx.compose.material.icons.filled.Repeat
-import androidx.compose.material.icons.filled.RepeatOne
-import androidx.compose.material.icons.filled.Shuffle
-import androidx.compose.material.icons.filled.SkipNext
-import androidx.compose.material.icons.filled.SkipPrevious
-import androidx.compose.material.icons.filled.Speed
-import androidx.compose.material.icons.filled.Timer
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
@@ -77,6 +41,7 @@ fun FullPlayerScreen(
     repeatMode: RepeatMode,
     playbackSpeed: Float,
     visualizerBands: FloatArray,
+    rms: Float,
     onPlayPauseClick: () -> Unit,
     onNextClick: () -> Unit,
     onPreviousClick: () -> Unit,
@@ -109,6 +74,13 @@ fun FullPlayerScreen(
     val curMin = curSec / 60
     val curRemSec = curSec % 60
     val formattedCurrent = String.format("%d:%02d", curMin, curRemSec)
+    
+    // Album Art Pulse Animation based on RMS
+    val pulseScale by animateFloatAsState(
+        targetValue = if (isPlaying) 1f + (rms * 0.12f) else 1f,
+        animationSpec = spring(dampingRatio = 0.75f, stiffness = Spring.StiffnessLow),
+        label = "pulse"
+    )
 
     BoxWithConstraints(
         modifier = modifier
@@ -153,9 +125,9 @@ fun FullPlayerScreen(
 
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = "NOW PLAYING",
+                        text = "AURA AUDIO ENGINE",
                         style = MaterialTheme.typography.labelSmall.copy(
-                            fontWeight = FontWeight.Bold,
+                            fontWeight = FontWeight.ExtraBold,
                             letterSpacing = 2.sp
                         ),
                         color = Color(0xFFD0BCFF)
@@ -183,7 +155,7 @@ fun FullPlayerScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Main Artwork or Vinyl Disc with Swipe Gestures
+            // Main Artwork or Vinyl Disc with Pulse Effect
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -203,15 +175,18 @@ fun FullPlayerScreen(
                     VinylDisc(
                         albumArtUri = song.albumArtUri,
                         isPlaying = isPlaying,
-                        modifier = Modifier.size(calculatedArtSize)
+                        modifier = Modifier
+                            .size(calculatedArtSize)
+                            .scale(pulseScale)
                     )
                 } else {
                     Box(
                         modifier = Modifier
                             .size(calculatedArtSize)
-                            .clip(RoundedCornerShape(28.dp))
+                            .scale(pulseScale)
+                            .clip(RoundedCornerShape(32.dp))
                             .background(Color.White.copy(alpha = 0.08f))
-                            .border(BorderStroke(1.dp, Color.White.copy(alpha = 0.12f)), RoundedCornerShape(28.dp)),
+                            .border(BorderStroke(1.dp, Color.White.copy(alpha = 0.12f)), RoundedCornerShape(32.dp)),
                         contentAlignment = Alignment.Center
                     ) {
                         if (!song.albumArtUri.isNullOrEmpty()) {
@@ -235,12 +210,12 @@ fun FullPlayerScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Real-Time Audio Visualizer Canvas
+            // Professional Visualizer
             AudioVisualizerBars(
                 bands = visualizerBands,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(48.dp)
+                    .height(64.dp)
                     .padding(horizontal = 8.dp)
             )
 
@@ -255,7 +230,8 @@ fun FullPlayerScreen(
                         text = song.title,
                         style = MaterialTheme.typography.titleLarge.copy(
                             fontWeight = FontWeight.Bold,
-                            fontSize = 22.sp
+                            fontSize = 24.sp,
+                            letterSpacing = (-0.5).sp
                         ),
                         color = Color.White,
                         maxLines = 1,
@@ -297,7 +273,7 @@ fun FullPlayerScreen(
                     colors = SliderDefaults.colors(
                         thumbColor = MaterialTheme.colorScheme.primary,
                         activeTrackColor = MaterialTheme.colorScheme.primary,
-                        inactiveTrackColor = Color.White.copy(alpha = 0.2f)
+                        inactiveTrackColor = Color.White.copy(alpha = 0.15f)
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
@@ -321,7 +297,7 @@ fun FullPlayerScreen(
                 }
             }
 
-            // Playback Controls Row (Shuffle, Previous, Play/Pause, Next, Repeat)
+            // Playback Controls Row
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly,
@@ -337,47 +313,43 @@ fun FullPlayerScreen(
 
                 IconButton(
                     onClick = onPreviousClick,
-                    modifier = Modifier.size(48.dp)
+                    modifier = Modifier.size(56.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.SkipPrevious,
                         contentDescription = "Previous Track",
                         tint = Color.White,
-                        modifier = Modifier.size(36.dp)
+                        modifier = Modifier.size(40.dp)
                     )
                 }
 
-                Box(
+                Surface(
                     modifier = Modifier
-                        .size(68.dp)
-                        .clip(CircleShape)
-                        .background(
-                            Brush.linearGradient(
-                                colors = listOf(Color(0xFFBB86FC), Color(0xFF7C4DFF))
-                            )
-                        )
-                        .testTag("player_play_pause_fab"),
-                    contentAlignment = Alignment.Center
+                        .size(76.dp)
+                        .clip(CircleShape),
+                    color = MaterialTheme.colorScheme.primary,
+                    tonalElevation = 8.dp,
+                    onClick = onPlayPauseClick
                 ) {
-                    IconButton(onClick = onPlayPauseClick) {
+                    Box(contentAlignment = Alignment.Center) {
                         Icon(
                             imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                             contentDescription = if (isPlaying) "Pause" else "Play",
                             tint = Color.Black,
-                            modifier = Modifier.size(38.dp)
+                            modifier = Modifier.size(42.dp)
                         )
                     }
                 }
 
                 IconButton(
                     onClick = onNextClick,
-                    modifier = Modifier.size(48.dp)
+                    modifier = Modifier.size(56.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.SkipNext,
                         contentDescription = "Next Track",
                         tint = Color.White,
-                        modifier = Modifier.size(36.dp)
+                        modifier = Modifier.size(40.dp)
                     )
                 }
 
@@ -390,7 +362,7 @@ fun FullPlayerScreen(
                 }
             }
 
-            // Secondary Controls (Equalizer, Lyrics, Sleep Timer, Playback Speed)
+            // Secondary Controls
             Row(
                 modifier = Modifier
                     .fillMaxWidth()

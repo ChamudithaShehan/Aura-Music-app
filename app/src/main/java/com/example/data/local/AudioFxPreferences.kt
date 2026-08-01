@@ -12,7 +12,9 @@ import kotlinx.coroutines.flow.map
 
 val Context.dataStore by preferencesDataStore(name = "aura_settings")
 
-class AudioFxPreferences(private val context: Context) {
+class AudioFxPreferences(context: Context) {
+
+    private val appContext = context.applicationContext
 
     private object Keys {
         val THEME_MODE = stringPreferencesKey("theme_mode")
@@ -34,31 +36,31 @@ class AudioFxPreferences(private val context: Context) {
         val LOCKSCREEN_ART = booleanPreferencesKey("lockscreen_art")
     }
 
-    val themeMode: Flow<String> = context.dataStore.data.map {
+    val themeMode: Flow<String> = appContext.dataStore.data.map {
         it[Keys.THEME_MODE] ?: "SYSTEM"
     }
 
-    val language: Flow<String> = context.dataStore.data.map {
+    val language: Flow<String> = appContext.dataStore.data.map {
         it[Keys.LANGUAGE] ?: "English"
     }
 
-    val gaplessPlayback: Flow<Boolean> = context.dataStore.data.map {
+    val gaplessPlayback: Flow<Boolean> = appContext.dataStore.data.map {
         it[Keys.GAPLESS_PLAYBACK] ?: true
     }
 
-    val crossfadeSeconds: Flow<Int> = context.dataStore.data.map {
+    val crossfadeSeconds: Flow<Int> = appContext.dataStore.data.map {
         it[Keys.CROSSFADE_SECONDS] ?: 2
     }
 
-    val pauseOnDisconnect: Flow<Boolean> = context.dataStore.data.map {
+    val pauseOnDisconnect: Flow<Boolean> = appContext.dataStore.data.map {
         it[Keys.PAUSE_ON_DISCONNECT] ?: true
     }
 
-    val lockscreenArt: Flow<Boolean> = context.dataStore.data.map {
+    val lockscreenArt: Flow<Boolean> = appContext.dataStore.data.map {
         it[Keys.LOCKSCREEN_ART] ?: true
     }
 
-    val equalizerState: Flow<AudioEqualizerState> = context.dataStore.data.map { prefs ->
+    val equalizerState: Flow<AudioEqualizerState> = appContext.dataStore.data.map { prefs ->
         val bandsStr = prefs[Keys.BAND_LEVELS] ?: "0,0,0,0,0,0,0,0,0,0"
         val bands = try {
             bandsStr.split(",").map { it.toInt() }
@@ -81,31 +83,31 @@ class AudioFxPreferences(private val context: Context) {
     }
 
     suspend fun setThemeMode(mode: String) {
-        context.dataStore.edit { it[Keys.THEME_MODE] = mode }
+        appContext.dataStore.edit { it[Keys.THEME_MODE] = mode }
     }
 
     suspend fun setLanguage(lang: String) {
-        context.dataStore.edit { it[Keys.LANGUAGE] = lang }
+        appContext.dataStore.edit { it[Keys.LANGUAGE] = lang }
     }
 
     suspend fun setGaplessPlayback(enabled: Boolean) {
-        context.dataStore.edit { it[Keys.GAPLESS_PLAYBACK] = enabled }
+        appContext.dataStore.edit { it[Keys.GAPLESS_PLAYBACK] = enabled }
     }
 
     suspend fun setCrossfadeSeconds(sec: Int) {
-        context.dataStore.edit { it[Keys.CROSSFADE_SECONDS] = sec }
+        appContext.dataStore.edit { it[Keys.CROSSFADE_SECONDS] = sec }
     }
 
     suspend fun setPauseOnDisconnect(enabled: Boolean) {
-        context.dataStore.edit { it[Keys.PAUSE_ON_DISCONNECT] = enabled }
+        appContext.dataStore.edit { it[Keys.PAUSE_ON_DISCONNECT] = enabled }
     }
 
     suspend fun setLockscreenArt(enabled: Boolean) {
-        context.dataStore.edit { it[Keys.LOCKSCREEN_ART] = enabled }
+        appContext.dataStore.edit { it[Keys.LOCKSCREEN_ART] = enabled }
     }
 
     suspend fun updateEqualizer(state: AudioEqualizerState) {
-        context.dataStore.edit { prefs ->
+        appContext.dataStore.edit { prefs ->
             prefs[Keys.EQ_ENABLED] = state.isEnabled
             prefs[Keys.EQ_PRESET] = state.presetName
             prefs[Keys.BAND_LEVELS] = state.bandLevels.joinToString(",")

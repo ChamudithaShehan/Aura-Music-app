@@ -7,10 +7,8 @@ import com.example.data.local.dao.EqualizerDao
 import com.example.data.local.entity.EqualizerPresetEntity
 import com.example.domain.model.AudioEqualizerState
 import com.example.player.PlayerManager
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -22,20 +20,29 @@ class EqualizerViewModel(
 ) : ViewModel() {
 
     val equalizerState: StateFlow<AudioEqualizerState> = playerManager.equalizerState
+    
+    // Audio Visualization data
+    val visualizerBands: StateFlow<FloatArray> = playerManager.visualizerBands
+    val waveform: StateFlow<ByteArray> = playerManager.waveform
+    val rms: StateFlow<Float> = playerManager.rms
 
     private val builtInPresets = mapOf(
         "Normal" to listOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
-        "Rock" to listOf(4, 3, 2, 0, -1, -1, 1, 2, 3, 4),
-        "Pop" to listOf(-1, 1, 2, 3, 2, 1, 0, -1, -1, -2),
-        "Jazz" to listOf(3, 2, 1, 2, -1, -1, 0, 1, 2, 3),
-        "Dance" to listOf(5, 4, 2, 0, 0, 2, 3, 4, 5, 0),
-        "Hip Hop" to listOf(5, 4, 0, 2, -1, -1, 0, 2, 4, 5),
+        "Rock" to listOf(4, 3, 2, 0, -1, -2, -1, 1, 3, 4),
+        "Pop" to listOf(-1, 0, 1, 2, 3, 3, 2, 1, 0, -1),
+        "Jazz" to listOf(3, 2, 1, 1, -1, -1, 0, 1, 2, 3),
+        "Dance" to listOf(5, 4, 2, 0, 1, 2, 3, 4, 5, 1),
+        "Hip Hop" to listOf(5, 3, 1, 2, 0, 0, 1, 2, 4, 5),
         "Classical" to listOf(4, 3, 2, 1, 0, 0, 0, 1, 2, 3),
-        "Acoustic" to listOf(3, 2, 1, 2, 1, 1, 2, 3, 3, 2),
-        "Electronic" to listOf(4, 3, 0, 2, 4, 2, 0, 2, 4, 5),
-        "Vocal" to listOf(-2, -3, -3, 1, 4, 4, 3, 1, -1, -2),
-        "Bass Boost" to listOf(6, 5, 4, 2, 0, 0, 0, 0, 0, 0),
-        "Treble Boost" to listOf(0, 0, 0, 0, 0, 0, 2, 4, 6, 8)
+        "Acoustic" to listOf(3, 2, 1, 0, 1, 2, 2, 3, 3, 2),
+        "Electronic" to listOf(4, 3, 1, 2, 3, 2, 1, 2, 4, 5),
+        "Metal" to listOf(5, 4, -2, -3, -1, 0, 2, 3, 4, 5),
+        "Podcast" to listOf(-3, -2, -1, 1, 4, 4, 3, 2, 1, 0),
+        "Movie" to listOf(3, 1, 0, 0, 1, 2, 2, 3, 2, 1),
+        "Bass Boost" to listOf(6, 5, 4, 2, 1, 0, 0, 0, 0, 0),
+        "Treble Boost" to listOf(0, 0, 0, 0, 0, 1, 2, 4, 6, 8),
+        "Gaming" to listOf(4, 2, 0, 1, 2, 3, 3, 4, 3, 2),
+        "Night Mode" to listOf(-2, -3, -2, -1, 1, 1, 0, -1, -2, -3)
     )
 
     val customPresets: StateFlow<List<EqualizerPresetEntity>> = equalizerDao.getAllPresets()

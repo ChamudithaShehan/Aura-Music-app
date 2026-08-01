@@ -20,10 +20,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.io.File
-import kotlin.math.abs
-import kotlin.math.sin
 
-class PlayerManager(private val context: Context, private val equalizerManager: EqualizerManager) {
+class PlayerManager(
+    private val context: Context,
+    private val equalizerManager: EqualizerManager,
+    private val visualizerManager: VisualizerManager
+) {
 
     private val scope = CoroutineScope(Dispatchers.Main + Job())
 
@@ -66,20 +68,19 @@ class PlayerManager(private val context: Context, private val equalizerManager: 
     private val _sleepTimerRemainingSec = MutableStateFlow<Int?>(null)
     val sleepTimerRemainingSec: StateFlow<Int?> = _sleepTimerRemainingSec.asStateFlow()
 
-    // 32 frequency band amplitudes for 120fps smooth audio visualizer
-    private val _visualizerBands = MutableStateFlow(FloatArray(32) { 0.1f })
-    val visualizerBands: StateFlow<FloatArray> = _visualizerBands.asStateFlow()
+    // Real-time FFT and Waveform flows
+    val visualizerBands: StateFlow<FloatArray> = visualizerManager.fftData
+    val waveform: StateFlow<ByteArray> = visualizerManager.waveform
+    val rms: StateFlow<Float> = visualizerManager.rms
 
     val equalizerState: StateFlow<AudioEqualizerState> = equalizerManager.state
 
     private var sleepTimerJob: Job? = null
     private var progressUpdateJob: Job? = null
-    private var visualizerJob: Job? = null
 
     init {
         setupPlayerListener()
         startProgressTracker()
-        startVisualizerSimulator()
         setupAudioEffects()
     }
 
@@ -108,6 +109,7 @@ class PlayerManager(private val context: Context, private val equalizerManager: 
             override fun onAudioSessionIdChanged(audioSessionId: Int) {
                 if (audioSessionId != 0 && audioSessionId != -1) {
                     equalizerManager.init(audioSessionId)
+                    visualizerManager.init(audioSessionId)
                 }
             }
         })
@@ -115,6 +117,7 @@ class PlayerManager(private val context: Context, private val equalizerManager: 
         val currentSessionId = exoPlayer.audioSessionId
         if (currentSessionId != 0 && currentSessionId != -1) {
             equalizerManager.init(currentSessionId)
+            visualizerManager.init(currentSessionId)
         }
     }
 
@@ -251,55 +254,10 @@ class PlayerManager(private val context: Context, private val equalizerManager: 
         }
     }
 
-    private fun startVisualizerSimulator() {
-        visualizerJob = scope.launch {
-            var phase = 0.0
-            val bands = FloatArray(32) { 0.02f }
-            var activeFade = false
-            while (true) {
-                if (exoPlayer.isPlaying) {
-                    phase += 0.15
-                    val eqState = equalizerManager.state.value
-                    val bassBoostFactor = if (eqState.isEnabled && eqState.bassBoostEnabled) 
-                        1.0f + (eqState.bassBoostStrength / 1000f) * 0.5f else 1.0f
-
-                    for (i in 0 until 32) {
-                        val base = abs(sin(phase + i * 0.25)).toFloat()
-                        val eqBandIndex = (i * 10) / 32
-                        val eqGain = if (eqState.isEnabled) {
-                            val db = eqState.bandLevels.getOrElse(eqBandIndex) { 0 }
-                            1.0f + (db / 15f) * 0.4f
-                        } else 1.0f
-                        val bassMul = if (i < 8) 1.2f * bassBoostFactor else 0.8f
-                        bands[i] = (base * bassMul * eqGain * 0.85f + 0.1f).coerceIn(0.05f, 1.0f)
-                    }
-                    _visualizerBands.value = bands.clone()
-                    activeFade = true
-                    delay(40)
-                } else if (activeFade) {
-                    var remaining = false
-                    for (i in 0 until 32) {
-                        bands[i] = bands[i] * 0.75f
-                        if (bands[i] > 0.03f) {
-                            remaining = true
-                        } else {
-                            bands[i] = 0.02f
-                        }
-                    }
-                    _visualizerBands.value = bands.clone()
-                    activeFade = remaining
-                    delay(50)
-                } else {
-                    delay(500)
-                }
-            }
-        }
-    }
-
     fun release() {
         progressUpdateJob?.cancel()
-        visualizerJob?.cancel()
         sleepTimerJob?.cancel()
+        visualizerManager.release()
         equalizerManager.release()
         exoPlayer.release()
     }

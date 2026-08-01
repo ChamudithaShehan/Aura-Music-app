@@ -1,5 +1,6 @@
 package com.example.ui.screens.equalizer
 
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
@@ -16,11 +17,19 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -33,6 +42,9 @@ import com.example.ui.components.GlassCard
 fun EqualizerScreen(
     equalizerState: AudioEqualizerState,
     allPresets: List<String>,
+    visualizerBands: FloatArray,
+    waveform: ByteArray,
+    rms: Float,
     onToggleMaster: (Boolean) -> Unit,
     onSelectPreset: (String) -> Unit,
     onBandLevelChange: (Int, Int) -> Unit,
@@ -50,8 +62,9 @@ fun EqualizerScreen(
     var dropdownExpanded by remember { mutableStateOf(false) }
     var showSaveDialog by remember { mutableStateOf(false) }
     var newPresetName by remember { mutableStateOf("") }
+    val haptic = LocalHapticFeedback.current
     
-    val bandLabels = listOf("31Hz", "62Hz", "125Hz", "250Hz", "500Hz", "1kHz", "2kHz", "4kHz", "8kHz", "16kHz")
+    val bandLabels = listOf("31", "62", "125", "250", "500", "1k", "2k", "4k", "8k", "16k")
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
 
@@ -69,27 +82,78 @@ fun EqualizerScreen(
         ) {
             Column {
                 Text(
-                    text = "Equalizer",
+                    text = "Aura DSP",
                     style = MaterialTheme.typography.headlineMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 28.sp
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 32.sp,
+                        letterSpacing = (-1).sp
                     )
                 )
                 Text(
-                    text = "Professional Audio Processing",
+                    text = "Master Audio Engine",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold
                 )
             }
 
             Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onReset) {
+                IconButton(onClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    onReset()
+                }) {
                     Icon(Icons.Default.Refresh, contentDescription = "Reset")
                 }
                 Spacer(modifier = Modifier.width(8.dp))
                 Switch(
                     checked = equalizerState.isEnabled,
-                    onCheckedChange = onToggleMaster
+                    onCheckedChange = {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        onToggleMaster(it)
+                    }
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Professional Audio Analyzer Card
+        GlassCard(modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "REAL-TIME ANALYZER",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "Peak: ${(rms * 100).toInt()}%",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                SpectrumAnalyzer(
+                    bands = visualizerBands,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(120.dp)
+                )
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                WaveformDisplay(
+                    waveform = waveform,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(40.dp)
                 )
             }
         }
@@ -111,25 +175,31 @@ fun EqualizerScreen(
                     value = equalizerState.presetName,
                     onValueChange = {},
                     readOnly = true,
-                    label = { Text("Preset") },
+                    label = { Text("Audio Profile") },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = dropdownExpanded) },
                     modifier = Modifier.menuAnchor().fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(16.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+                    )
                 )
 
                 ExposedDropdownMenu(
                     expanded = dropdownExpanded,
-                    onDismissRequest = { dropdownExpanded = false }
+                    onDismissRequest = { dropdownExpanded = false },
+                    modifier = Modifier.background(MaterialTheme.colorScheme.surfaceColorAtElevation(4.dp))
                 ) {
                     allPresets.forEach { preset ->
                         DropdownMenuItem(
-                            text = { Text(preset) },
+                            text = { Text(preset, fontWeight = if (preset == equalizerState.presetName) FontWeight.Bold else FontWeight.Normal) },
                             onClick = {
+                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                 onSelectPreset(preset)
                                 dropdownExpanded = false
                             },
                             trailingIcon = {
-                                if (preset !in listOf("Normal", "Rock", "Pop", "Jazz", "Dance", "Hip Hop", "Classical", "Acoustic", "Electronic", "Vocal", "Bass Boost", "Treble Boost")) {
+                                if (preset !in listOf("Normal", "Rock", "Pop", "Jazz", "Dance", "Hip Hop", "Classical", "Acoustic", "Electronic", "Metal", "Podcast", "Movie", "Bass Boost", "Treble Boost", "Gaming", "Night Mode")) {
                                     IconButton(onClick = { onDeletePreset(preset) }) {
                                         Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
                                     }
@@ -140,12 +210,12 @@ fun EqualizerScreen(
                 }
             }
             
-            Button(
+            FilledTonalButton(
                 onClick = { showSaveDialog = true },
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(16.dp),
                 modifier = Modifier.height(56.dp)
             ) {
-                Icon(Icons.Default.Save, contentDescription = null)
+                Icon(Icons.Default.Save, contentDescription = null, modifier = Modifier.size(20.dp))
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("Save")
             }
@@ -157,7 +227,7 @@ fun EqualizerScreen(
         GlassCard(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(12.dp)) {
                 Text(
-                    text = "10-BAND FREQUENCY CONTROL",
+                    text = "PRECISION FREQUENCY SHAPING (dB)",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold
@@ -180,19 +250,25 @@ fun EqualizerScreen(
                                 Text(
                                     text = "${if (level > 0) "+" else ""}$level",
                                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                                    color = if (equalizerState.isEnabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                                    color = if (equalizerState.isEnabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
+                                    fontWeight = FontWeight.Bold
                                 )
 
                                 Spacer(modifier = Modifier.height(8.dp))
 
                                 VerticalBandSlider(
                                     value = level.toFloat(),
-                                    onValueChange = { onBandLevelChange(index, it.toInt()) },
+                                    onValueChange = { 
+                                        if (it.toInt() != level) {
+                                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                            onBandLevelChange(index, it.toInt())
+                                        }
+                                    },
                                     valueRange = -15f..15f,
                                     enabled = equalizerState.isEnabled,
                                     modifier = Modifier
                                         .width(32.dp)
-                                        .height(200.dp)
+                                        .height(220.dp)
                                 )
 
                                 Spacer(modifier = Modifier.height(8.dp))
@@ -201,7 +277,7 @@ fun EqualizerScreen(
                                     text = freqLabel,
                                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
                                     color = if (equalizerState.isEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
-                                    fontWeight = FontWeight.Bold
+                                    fontWeight = FontWeight.ExtraBold
                                 )
                             }
                         }
@@ -210,13 +286,13 @@ fun EqualizerScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
         // DSP Effects Section
         if (isLandscape) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
                 EffectCard(
-                    title = "BASS BOOST",
+                    title = "BASS ENGINE",
                     enabled = equalizerState.bassBoostEnabled,
                     onToggle = onToggleBassBoost,
                     value = equalizerState.bassBoostStrength,
@@ -226,7 +302,7 @@ fun EqualizerScreen(
                     modifier = Modifier.weight(1f)
                 )
                 EffectCard(
-                    title = "3D VIRTUALIZER",
+                    title = "3D SPATIALIZER",
                     enabled = equalizerState.virtualizerEnabled,
                     onToggle = onToggleVirtualizer,
                     value = equalizerState.virtualizerStrength,
@@ -238,7 +314,7 @@ fun EqualizerScreen(
             }
         } else {
             EffectCard(
-                title = "BASS BOOST",
+                title = "BASS ENGINE",
                 enabled = equalizerState.bassBoostEnabled,
                 onToggle = onToggleBassBoost,
                 value = equalizerState.bassBoostStrength,
@@ -248,7 +324,7 @@ fun EqualizerScreen(
             )
             Spacer(modifier = Modifier.height(16.dp))
             EffectCard(
-                title = "3D VIRTUALIZER",
+                title = "3D SPATIALIZER",
                 enabled = equalizerState.virtualizerEnabled,
                 onToggle = onToggleVirtualizer,
                 value = equalizerState.virtualizerStrength,
@@ -261,7 +337,7 @@ fun EqualizerScreen(
         Spacer(modifier = Modifier.height(16.dp))
         
         EffectCard(
-            title = "LOUDNESS ENHANCER",
+            title = "DYNAMICS LIMITER",
             enabled = equalizerState.loudnessEnabled,
             onToggle = onToggleLoudness,
             value = equalizerState.loudnessGain,
@@ -276,14 +352,14 @@ fun EqualizerScreen(
     if (showSaveDialog) {
         AlertDialog(
             onDismissRequest = { showSaveDialog = false },
-            title = { Text("Save Custom Preset") },
+            title = { Text("Save Audio Profile") },
             text = {
                 OutlinedTextField(
                     value = newPresetName,
                     onValueChange = { newPresetName = it },
-                    label = { Text("Preset Name") },
+                    label = { Text("Profile Name") },
                     singleLine = true,
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(16.dp)
                 )
             },
             confirmButton = {
@@ -295,7 +371,7 @@ fun EqualizerScreen(
                             showSaveDialog = false
                         }
                     },
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(16.dp)
                 ) {
                     Text("Save")
                 }
@@ -305,6 +381,79 @@ fun EqualizerScreen(
                     Text("Cancel")
                 }
             }
+        )
+    }
+}
+
+@Composable
+fun SpectrumAnalyzer(
+    bands: FloatArray,
+    modifier: Modifier = Modifier
+) {
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val secondaryColor = MaterialTheme.colorScheme.secondary
+    
+    Canvas(modifier = modifier) {
+        val barWidth = size.width / (bands.size * 1.5f)
+        val spacing = barWidth * 0.5f
+        
+        bands.forEachIndexed { index, magnitude ->
+            val barHeight = magnitude * size.height
+            val x = index * (barWidth + spacing)
+            
+            // Draw Glow
+            drawRect(
+                brush = Brush.verticalGradient(
+                    colors = listOf(primaryColor.copy(alpha = 0.5f), Color.Transparent),
+                    startY = size.height - barHeight,
+                    endY = size.height
+                ),
+                topLeft = Offset(x, size.height - barHeight),
+                size = Size(barWidth, barHeight)
+            )
+            
+            // Draw Main Bar
+            drawRoundRect(
+                color = primaryColor,
+                topLeft = Offset(x, size.height - barHeight),
+                size = Size(barWidth, barHeight.coerceAtLeast(2.dp.toPx())),
+                cornerRadius = CornerRadius(2.dp.toPx())
+            )
+            
+            // Draw Peak Dot
+            drawRect(
+                color = secondaryColor,
+                topLeft = Offset(x, (size.height - barHeight - 4.dp.toPx()).coerceAtLeast(0f)),
+                size = Size(barWidth, 2.dp.toPx())
+            )
+        }
+    }
+}
+
+@Composable
+fun WaveformDisplay(
+    waveform: ByteArray,
+    modifier: Modifier = Modifier
+) {
+    val primaryColor = MaterialTheme.colorScheme.primary
+    
+    Canvas(modifier = modifier) {
+        val path = Path()
+        val midY = size.height / 2f
+        val stepX = size.width / waveform.size.toFloat()
+        
+        path.moveTo(0f, midY)
+        for (i in waveform.indices) {
+            val x = i * stepX
+            val sample = (waveform[i].toInt() and 0xFF) - 128
+            val y = midY + (sample / 128f) * midY
+            path.lineTo(x, y)
+        }
+        
+        drawPath(
+            path = path,
+            color = primaryColor.copy(alpha = 0.6f),
+            style = Stroke(width = 1.5.dp.toPx(), cap = StrokeCap.Round)
         )
     }
 }
@@ -320,8 +469,10 @@ fun EffectCard(
     masterEnabled: Boolean,
     modifier: Modifier = Modifier
 ) {
+    val haptic = LocalHapticFeedback.current
+    
     GlassCard(modifier = modifier) {
-        Column(modifier = Modifier.padding(12.dp)) {
+        Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -331,23 +482,27 @@ fun EffectCard(
                     text = title,
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.ExtraBold,
+                    letterSpacing = 1.sp
                 )
                 Switch(
                     checked = enabled,
-                    onCheckedChange = onToggle,
+                    onCheckedChange = {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onToggle(it)
+                    },
                     enabled = masterEnabled
                 )
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "Strength",
+                    text = "Intensiveness",
                     style = MaterialTheme.typography.bodyMedium,
                     color = if (masterEnabled && enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
                 )
@@ -361,12 +516,18 @@ fun EffectCard(
 
             Slider(
                 value = value.toFloat(),
-                onValueChange = { onValueChange(it.toInt()) },
+                onValueChange = { 
+                    if (it.toInt() != value) {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        onValueChange(it.toInt())
+                    }
+                },
                 valueRange = valueRange,
                 enabled = masterEnabled && enabled,
                 colors = SliderDefaults.colors(
                     thumbColor = MaterialTheme.colorScheme.primary,
-                    activeTrackColor = MaterialTheme.colorScheme.primary
+                    activeTrackColor = MaterialTheme.colorScheme.primary,
+                    inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant
                 )
             )
         }
@@ -381,13 +542,19 @@ private fun VerticalBandSlider(
     enabled: Boolean,
     modifier: Modifier = Modifier
 ) {
-    val alpha = if (enabled) 1f else 0.4f
+    val alpha = if (enabled) 1f else 0.3f
     val primaryColor = MaterialTheme.colorScheme.primary
     
+    val animatedValue by animateFloatAsState(
+        targetValue = value,
+        animationSpec = spring(stiffness = Spring.StiffnessLow),
+        label = "slider"
+    )
+
     BoxWithConstraints(
         modifier = modifier
-            .clip(RoundedCornerShape(16.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f * alpha))
+            .clip(RoundedCornerShape(20.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f * alpha))
             .pointerInput(enabled, valueRange) {
                 if (!enabled) return@pointerInput
                 detectVerticalDragGestures { change, dragAmount ->
@@ -404,18 +571,18 @@ private fun VerticalBandSlider(
         contentAlignment = Alignment.Center
     ) {
         val span = valueRange.endInclusive - valueRange.start
-        val normalizedValue = if (span > 0) ((value - valueRange.start) / span).coerceIn(0f, 1f) else 0.5f
+        val normalizedValue = if (span > 0) ((animatedValue - valueRange.start) / span).coerceIn(0f, 1f) else 0.5f
 
-        Canvas(modifier = Modifier.fillMaxSize().padding(vertical = 12.dp)) {
-            val trackWidth = 4.dp.toPx()
-            val thumbRadius = 8.dp.toPx()
+        Canvas(modifier = Modifier.fillMaxSize().padding(vertical = 14.dp)) {
+            val trackWidth = 6.dp.toPx()
+            val thumbRadius = 10.dp.toPx()
             val xCenter = size.width / 2f
             val startY = thumbRadius
             val endY = size.height - thumbRadius
             val activeY = endY - (normalizedValue * (endY - startY))
 
             drawLine(
-                color = primaryColor.copy(alpha = 0.1f * alpha),
+                color = primaryColor.copy(alpha = 0.05f * alpha),
                 start = Offset(xCenter, startY),
                 end = Offset(xCenter, endY),
                 strokeWidth = trackWidth,
@@ -437,9 +604,36 @@ private fun VerticalBandSlider(
             )
             drawCircle(
                 color = Color.White.copy(alpha = alpha),
-                radius = thumbRadius * 0.4f,
+                radius = thumbRadius * 0.45f,
                 center = Offset(xCenter, activeY)
             )
         }
     }
 }
+
+@Composable
+fun Switch(
+    checked: Boolean,
+    onCheckedChange: ((Boolean) -> Unit)?,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true
+) {
+    androidx.compose.material3.Switch(
+        checked = checked,
+        onCheckedChange = onCheckedChange,
+        modifier = modifier.scale(0.85f),
+        enabled = enabled
+    )
+}
+
+fun Modifier.scale(scale: Float): Modifier = this.then(
+    Modifier.layout { measurable, constraints ->
+        val placeable = measurable.measure(constraints)
+        layout(
+            (placeable.width * scale).toInt(),
+            (placeable.height * scale).toInt()
+        ) {
+            placeable.placeRelative(0, 0)
+        }
+    }
+)
