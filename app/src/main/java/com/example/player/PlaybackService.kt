@@ -47,15 +47,16 @@ class PlaybackService : MediaSessionService() {
             .setSessionActivity(pendingIntent)
             .setCallback(object : MediaSession.Callback {})
             .build()
-        Log.d(TAG, "Step 5: MediaSession created and bound to ExoPlayer")
+        addSession(mediaSession!!)
+        Log.d(TAG, "Step 5: MediaSession created, added to service, and bound to ExoPlayer")
 
         try {
-            setMediaNotificationProvider(
-                DefaultMediaNotificationProvider.Builder(this)
-                    .setChannelId(CHANNEL_ID)
-                    .setNotificationId(NOTIFICATION_ID)
-                    .build()
-            )
+            val notificationProvider = DefaultMediaNotificationProvider.Builder(this)
+                .setChannelId(CHANNEL_ID)
+                .setNotificationId(NOTIFICATION_ID)
+                .build()
+            notificationProvider.setSmallIcon(android.R.drawable.ic_media_play)
+            setMediaNotificationProvider(notificationProvider)
             Log.d(TAG, "Step 4: setMediaNotificationProvider() executed successfully with Channel ID=$CHANNEL_ID")
         } catch (e: Exception) {
             Log.e(TAG, "Step 4 Failure: Error setting MediaNotificationProvider", e)
@@ -101,6 +102,7 @@ class PlaybackService : MediaSessionService() {
     override fun onDestroy() {
         Log.d(TAG, "PlaybackService.onDestroy() executed")
         mediaSession?.run {
+            removeSession(this)
             release()
         }
         mediaSession = null

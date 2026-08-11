@@ -105,6 +105,17 @@ class PlayerManager(
                 _currentSong.value = _queue.value.find { it.id == mediaId }
                 _durationMs.value = exoPlayer.duration.coerceAtLeast(0L)
             }
+
+            override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
+                android.util.Log.e("PlayerManager", "ExoPlayer error occurred: ${error.message}", error)
+                if (exoPlayer.hasNextMediaItem()) {
+                    exoPlayer.seekToNextMediaItem()
+                    exoPlayer.prepare()
+                    exoPlayer.play()
+                } else {
+                    _isPlaying.value = false
+                }
+            }
         })
     }
 
@@ -128,7 +139,11 @@ class PlayerManager(
     private fun startPlaybackService() {
         try {
             val intent = Intent(context, PlaybackService::class.java)
-            ContextCompat.startForegroundService(context, intent)
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                ContextCompat.startForegroundService(context, intent)
+            } else {
+                context.startService(intent)
+            }
         } catch (e: Exception) {
             android.util.Log.e("PlayerManager", "Error starting PlaybackService", e)
         }

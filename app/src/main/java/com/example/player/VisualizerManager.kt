@@ -51,25 +51,33 @@ class VisualizerManager(private val context: Context) {
                 captureSize = Visualizer.getCaptureSizeRange()[1]
                 setDataCaptureListener(object : Visualizer.OnDataCaptureListener {
                     override fun onWaveFormDataCapture(v: Visualizer?, waveform: ByteArray?, samplingRate: Int) {
-                        waveform?.let {
-                            val now = SystemClock.elapsedRealtime()
-                            if (now - lastWaveformUpdateMs >= minFrameIntervalMs) {
-                                lastWaveformUpdateMs = now
-                                val copyLen = minOf(it.size, 128)
-                                System.arraycopy(it, 0, waveformBuffer, 0, copyLen)
-                                _waveform.value = waveformBuffer.copyOf(128)
-                                calculateRMS(it)
+                        try {
+                            waveform?.let {
+                                val now = SystemClock.elapsedRealtime()
+                                if (now - lastWaveformUpdateMs >= minFrameIntervalMs) {
+                                    lastWaveformUpdateMs = now
+                                    val copyLen = minOf(it.size, 128)
+                                    System.arraycopy(it, 0, waveformBuffer, 0, copyLen)
+                                    _waveform.value = waveformBuffer.copyOf(128)
+                                    calculateRMS(it)
+                                }
                             }
+                        } catch (e: Exception) {
+                            Log.e("VisualizerManager", "Error in onWaveFormDataCapture", e)
                         }
                     }
 
                     override fun onFftDataCapture(v: Visualizer?, fft: ByteArray?, samplingRate: Int) {
-                        fft?.let {
-                            val now = SystemClock.elapsedRealtime()
-                            if (now - lastFftUpdateMs >= minFrameIntervalMs) {
-                                lastFftUpdateMs = now
-                                processFFT(it)
+                        try {
+                            fft?.let {
+                                val now = SystemClock.elapsedRealtime()
+                                if (now - lastFftUpdateMs >= minFrameIntervalMs) {
+                                    lastFftUpdateMs = now
+                                    processFFT(it)
+                                }
                             }
+                        } catch (e: Exception) {
+                            Log.e("VisualizerManager", "Error in onFftDataCapture", e)
                         }
                     }
                 }, Visualizer.getMaxCaptureRate() / 2, true, true)
@@ -124,8 +132,11 @@ class VisualizerManager(private val context: Context) {
 
     fun release() {
         try {
-            visualizer?.enabled = false
-            visualizer?.release()
+            visualizer?.apply {
+                enabled = false
+                setDataCaptureListener(null, 0, false, false)
+                release()
+            }
         } catch (e: Exception) {
             Log.e("VisualizerManager", "Error releasing visualizer", e)
         }

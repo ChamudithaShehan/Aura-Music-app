@@ -122,10 +122,10 @@ class EqualizerManager(private val context: Context) {
     }
 
     fun release() {
-        try { equalizer?.release() } catch (e: Exception) { Log.e("EqualizerManager", "Error releasing Equalizer", e) }
-        try { bassBoost?.release() } catch (e: Exception) { Log.e("EqualizerManager", "Error releasing BassBoost", e) }
-        try { virtualizer?.release() } catch (e: Exception) { Log.e("EqualizerManager", "Error releasing Virtualizer", e) }
-        try { loudnessEnhancer?.release() } catch (e: Exception) { Log.e("EqualizerManager", "Error releasing LoudnessEnhancer", e) }
+        try { equalizer?.apply { enabled = false; release() } } catch (e: Exception) { Log.e("EqualizerManager", "Error releasing Equalizer", e) }
+        try { bassBoost?.apply { enabled = false; release() } } catch (e: Exception) { Log.e("EqualizerManager", "Error releasing BassBoost", e) }
+        try { virtualizer?.apply { enabled = false; release() } } catch (e: Exception) { Log.e("EqualizerManager", "Error releasing Virtualizer", e) }
+        try { loudnessEnhancer?.apply { enabled = false; release() } } catch (e: Exception) { Log.e("EqualizerManager", "Error releasing LoudnessEnhancer", e) }
         
         equalizer = null
         bassBoost = null

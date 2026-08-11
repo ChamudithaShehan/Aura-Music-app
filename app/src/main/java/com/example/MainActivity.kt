@@ -157,7 +157,7 @@ fun MainAppContent(
     // Notification Permission Handling (Android 13+)
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         val notificationPermissionState = rememberPermissionState(permission = Manifest.permission.POST_NOTIFICATIONS)
-        LaunchedEffect(Unit) {
+        LaunchedEffect(notificationPermissionState.status.isGranted) {
             if (!notificationPermissionState.status.isGranted) {
                 notificationPermissionState.launchPermissionRequest()
             }
