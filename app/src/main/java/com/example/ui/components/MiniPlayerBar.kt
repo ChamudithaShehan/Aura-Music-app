@@ -9,7 +9,9 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -23,7 +25,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MusicNote
@@ -44,7 +45,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
@@ -57,6 +58,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.domain.model.Song
+import com.example.ui.theme.AppleMusicRed
 import kotlin.math.abs
 
 @Composable
@@ -107,7 +109,7 @@ fun MiniPlayerBar(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 6.dp)
+                .padding(horizontal = 10.dp, vertical = 4.dp)
                 .onSizeChanged {
                     barWidthPx = it.width.toFloat()
                     barHeightPx = it.height.toFloat()
@@ -148,53 +150,27 @@ fun MiniPlayerBar(
                         }
                     )
                 }
-                .clip(RoundedCornerShape(20.dp))
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            Color(0xEE2A1B42),
-                            Color(0xEE180E29)
-                        )
-                    )
-                )
+                .shadow(elevation = 16.dp, shape = RoundedCornerShape(16.dp), spotColor = Color.Black.copy(alpha = 0.4f))
+                .clip(RoundedCornerShape(16.dp))
+                .background(Color(0xF0252528))
+                .border(BorderStroke(0.5.dp, Color.White.copy(alpha = 0.15f)), RoundedCornerShape(16.dp))
                 .clickable { onExpandClick() }
                 .testTag("mini_player_bar")
         ) {
             Column {
-                // Drag Handle Pill
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.CenterHorizontally)
-                        .padding(top = 6.dp, bottom = 4.dp)
-                        .width(36.dp)
-                        .height(4.dp)
-                        .clip(CircleShape)
-                        .background(Color.White.copy(alpha = 0.25f))
-                )
-
-                // Top Thin Progress Line
-                LinearProgressIndicator(
-                    progress = { progress },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(2.5.dp),
-                    color = MaterialTheme.colorScheme.primary,
-                    trackColor = Color.White.copy(alpha = 0.1f)
-                )
-
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                        .padding(horizontal = 10.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    // Album Art
+                    // Apple Music Artwork Thumbnail
                     Box(
                         modifier = Modifier
-                            .size(46.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(MaterialTheme.colorScheme.surfaceVariant),
+                            .size(42.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color.White.copy(alpha = 0.1f)),
                         contentAlignment = Alignment.Center
                     ) {
                         if (!song.albumArtUri.isNullOrEmpty()) {
@@ -208,62 +184,78 @@ fun MiniPlayerBar(
                             Icon(
                                 imageVector = Icons.Default.MusicNote,
                                 contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary
+                                tint = AppleMusicRed,
+                                modifier = Modifier.size(24.dp)
                             )
                         }
                     }
 
                     Spacer(modifier = Modifier.width(12.dp))
 
-                    // Title & Artist
+                    // Title & Artist snippet
                     Column(
                         modifier = Modifier.weight(1f)
                     ) {
                         Text(
                             text = song.title,
                             style = MaterialTheme.typography.bodyMedium.copy(
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 15.sp
                             ),
-                            color = MaterialTheme.colorScheme.onBackground,
+                            color = Color.White,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
                         Text(
-                            text = "${song.artist} • ${song.album}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            text = song.artist,
+                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                            color = Color.White.copy(alpha = 0.6f),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
                     }
 
-                    // Play/Pause & Next Buttons
+                    // Play/Pause & Next Control
                     IconButton(
                         onClick = onPlayPauseClick,
-                        modifier = Modifier.testTag("mini_player_play_pause")
+                        modifier = Modifier
+                            .size(36.dp)
+                            .testTag("mini_player_play_pause")
                     ) {
                         Icon(
                             imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                             contentDescription = if (isPlaying) "Pause" else "Play",
-                            tint = MaterialTheme.colorScheme.onBackground,
+                            tint = Color.White,
                             modifier = Modifier.size(28.dp)
                         )
                     }
 
                     IconButton(
                         onClick = onNextClick,
-                        modifier = Modifier.testTag("mini_player_next")
+                        modifier = Modifier
+                            .size(36.dp)
+                            .testTag("mini_player_next")
                     ) {
                         Icon(
                             imageVector = Icons.Default.SkipNext,
                             contentDescription = "Next Track",
-                            tint = MaterialTheme.colorScheme.onBackground,
+                            tint = Color.White,
                             modifier = Modifier.size(28.dp)
                         )
                     }
                 }
+
+                // Apple Style Progress Line at bottom edge
+                LinearProgressIndicator(
+                    progress = { progress },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(2.dp),
+                    color = AppleMusicRed,
+                    trackColor = Color.Transparent
+                )
             }
         }
     }
 }
+

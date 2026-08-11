@@ -164,7 +164,7 @@ fun MainAppContent(
         }
     }
 
-    val bottomBarRoutes = listOf(Screen.Home, Screen.Library, Screen.Equalizer, Screen.Search, Screen.Settings)
+    val bottomBarRoutes = listOf(Screen.Home, Screen.Library, Screen.Equalizer, Screen.Settings)
     val showBottomBar = currentRoute in bottomBarRoutes
 
     ImmersiveBackground {
@@ -187,7 +187,6 @@ fun MainAppContent(
                                 Triple(Screen.Home, "Home", Icons.Default.Home),
                                 Triple(Screen.Library, "Library", Icons.Default.LibraryMusic),
                                 Triple(Screen.Equalizer, "Equalizer", Icons.Default.Equalizer),
-                                Triple(Screen.Search, "Search", Icons.Default.Search),
                                 Triple(Screen.Settings, "Settings", Icons.Default.Settings)
                             )
 

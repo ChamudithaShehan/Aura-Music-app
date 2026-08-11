@@ -7,14 +7,23 @@ import android.media.audiofx.Visualizer
 import android.os.SystemClock
 import android.util.Log
 import androidx.core.content.ContextCompat
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlin.math.hypot
 import kotlin.math.log10
+import kotlin.math.sin
 import kotlin.math.sqrt
 
 class VisualizerManager(private val context: Context) {
     private var visualizer: Visualizer? = null
+    private val scope = CoroutineScope(Dispatchers.Default + Job())
+    private var simulationJob: Job? = null
     
     private val _fftData = MutableStateFlow(FloatArray(32) { 0f })
     val fftData = _fftData.asStateFlow()
@@ -34,19 +43,24 @@ class VisualizerManager(private val context: Context) {
 
     private var lastWaveformUpdateMs = 0L
     private var lastFftUpdateMs = 0L
+    private var lastDataReceivedMs = 0L
     private val minFrameIntervalMs = 33L // Throttle UI updates to ~30 FPS
 
+    init {
+        startFallbackTracker()
+    }
+
     fun init(sessionId: Int) {
-        if (sessionId == -1 || sessionId == 0) return
+        if (sessionId <= 0) return
         
-        // Runtime permission check to prevent native crash
+        // Check permission
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            Log.w("VisualizerManager", "RECORD_AUDIO permission not granted. Skipping Visualizer initialization.")
+            Log.w("VisualizerManager", "RECORD_AUDIO permission not granted. Skiping hardware Visualizer init.")
             return
         }
         
         try {
-            release()
+            releaseHardware()
             visualizer = Visualizer(sessionId).apply {
                 captureSize = Visualizer.getCaptureSizeRange()[1]
                 setDataCaptureListener(object : Visualizer.OnDataCaptureListener {
@@ -54,6 +68,7 @@ class VisualizerManager(private val context: Context) {
                         try {
                             waveform?.let {
                                 val now = SystemClock.elapsedRealtime()
+                                lastDataReceivedMs = now
                                 if (now - lastWaveformUpdateMs >= minFrameIntervalMs) {
                                     lastWaveformUpdateMs = now
                                     val copyLen = minOf(it.size, 128)
@@ -71,6 +86,7 @@ class VisualizerManager(private val context: Context) {
                         try {
                             fft?.let {
                                 val now = SystemClock.elapsedRealtime()
+                                lastDataReceivedMs = now
                                 if (now - lastFftUpdateMs >= minFrameIntervalMs) {
                                     lastFftUpdateMs = now
                                     processFFT(it)
@@ -85,6 +101,38 @@ class VisualizerManager(private val context: Context) {
             }
         } catch (e: Exception) {
             Log.e("VisualizerManager", "Error initializing visualizer", e)
+        }
+    }
+
+    private fun startFallbackTracker() {
+        simulationJob?.cancel()
+        simulationJob = scope.launch {
+            var phase = 0f
+            while (isActive) {
+                val now = SystemClock.elapsedRealtime()
+                // If hardware visualizer hasn't received actual audio frames recently, generate subtle organic visualizer data
+                if (now - lastDataReceivedMs > 500L) {
+                    phase += 0.15f
+                    val simFft = FloatArray(32)
+                    val simWave = ByteArray(128)
+                    
+                    for (i in 0 until 32) {
+                        val base = (sin((phase + i * 0.3f).toDouble()).toFloat() + 1f) * 0.35f
+                        val peak = (sin((phase * 1.5f + i * 0.5f).toDouble()).toFloat() + 1f) * 0.25f
+                        simFft[i] = (base + peak).coerceIn(0.05f, 0.85f)
+                    }
+                    
+                    for (i in 0 until 128) {
+                        val waveVal = (sin((phase * 2f + i * 0.1f).toDouble()) * 40).toInt() + 128
+                        simWave[i] = waveVal.toByte()
+                    }
+                    
+                    _fftData.value = simFft
+                    _waveform.value = simWave
+                    _rms.value = (sin(phase.toDouble()).toFloat() * 0.2f + 0.35f).coerceIn(0.1f, 0.7f)
+                }
+                delay(40)
+            }
         }
     }
 
@@ -130,7 +178,7 @@ class VisualizerManager(private val context: Context) {
         _rms.value = rmsValue.coerceIn(0f, 1f)
     }
 
-    fun release() {
+    private fun releaseHardware() {
         try {
             visualizer?.apply {
                 enabled = false
@@ -142,4 +190,10 @@ class VisualizerManager(private val context: Context) {
         }
         visualizer = null
     }
+
+    fun release() {
+        simulationJob?.cancel()
+        releaseHardware()
+    }
 }
+

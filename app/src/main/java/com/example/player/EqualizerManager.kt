@@ -22,37 +22,41 @@ class EqualizerManager(private val context: Context) {
     val state = _state.asStateFlow()
 
     fun init(sessionId: Int) {
-        if (sessionId == -1 || sessionId == 0) return
-        if (currentSessionId == sessionId) return
+        if (sessionId <= 0) return
+        if (currentSessionId == sessionId && equalizer != null) {
+            applyState(_state.value)
+            return
+        }
         
         release()
         currentSessionId = sessionId
         
         try {
+            // Priority 0, audioSession = sessionId
             equalizer = Equalizer(0, sessionId)
         } catch (e: Exception) {
-            Log.e("EqualizerManager", "Error initializing Equalizer", e)
+            Log.e("EqualizerManager", "Error initializing Equalizer for session $sessionId", e)
             equalizer = null
         }
 
         try {
             bassBoost = BassBoost(0, sessionId)
         } catch (e: Exception) {
-            Log.e("EqualizerManager", "Error initializing BassBoost", e)
+            Log.e("EqualizerManager", "Error initializing BassBoost for session $sessionId", e)
             bassBoost = null
         }
 
         try {
             virtualizer = Virtualizer(0, sessionId)
         } catch (e: Exception) {
-            Log.e("EqualizerManager", "Error initializing Virtualizer", e)
+            Log.e("EqualizerManager", "Error initializing Virtualizer for session $sessionId", e)
             virtualizer = null
         }
 
         try {
             loudnessEnhancer = LoudnessEnhancer(sessionId)
         } catch (e: Exception) {
-            Log.e("EqualizerManager", "Error initializing LoudnessEnhancer", e)
+            Log.e("EqualizerManager", "Error initializing LoudnessEnhancer for session $sessionId", e)
             loudnessEnhancer = null
         }
 
@@ -68,18 +72,17 @@ class EqualizerManager(private val context: Context) {
                 eq.enabled = enabled
                 if (enabled) {
                     val numBands = eq.numberOfBands.toInt()
-                    val bandRange = eq.bandLevelRange
-                    val minLevel = bandRange[0].toInt()
-                    val maxLevel = bandRange[1].toInt()
+                    val range = eq.bandLevelRange // [minMilliBel, maxMilliBel]
+                    val minLevelMb = range[0].toInt()
+                    val maxLevelMb = range[1].toInt()
+                    val uiLevels = newState.bandLevels // 10 bands (-15dB to +15dB)
 
-                    val maxBoost = newState.bandLevels.maxOrNull() ?: 0
-                    val headroomOffset = if (maxBoost > 0) -maxBoost * 50 else 0 // in milliBels
-
-                    newState.bandLevels.forEachIndexed { index, level ->
-                        if (index < numBands) {
-                            val milliBel = (level * 100 + headroomOffset).coerceIn(minLevel, maxLevel).toShort()
-                            eq.setBandLevel(index.toShort(), milliBel)
-                        }
+                    for (i in 0 until numBands) {
+                        // Map hardware band index `i` across the 10 UI bands
+                        val uiIndex = if (numBands == 10) i else ((i.toFloat() / (numBands - 1)) * 9).toInt().coerceIn(0, 9)
+                        val requestedDb = uiLevels.getOrElse(uiIndex) { 0 }
+                        val milliBel = (requestedDb * 100).coerceIn(minLevelMb, maxLevelMb).toShort()
+                        eq.setBandLevel(i.toShort(), milliBel)
                     }
                 }
             } catch (e: Exception) {
@@ -89,9 +92,13 @@ class EqualizerManager(private val context: Context) {
 
         bassBoost?.let { bb ->
             try {
-                bb.enabled = enabled && newState.bassBoostEnabled
-                if (bb.enabled && bb.strengthSupported) {
-                    bb.setStrength(newState.bassBoostStrength.toShort())
+                val bbEnabled = enabled && newState.bassBoostEnabled
+                bb.enabled = bbEnabled
+                if (bbEnabled) {
+                    if (bb.strengthSupported) {
+                        val strength = newState.bassBoostStrength.coerceIn(0, 1000).toShort()
+                        bb.setStrength(strength)
+                    }
                 }
             } catch (e: Exception) {
                 Log.e("EqualizerManager", "Error applying BassBoost state", e)
@@ -100,9 +107,13 @@ class EqualizerManager(private val context: Context) {
 
         virtualizer?.let { virt ->
             try {
-                virt.enabled = enabled && newState.virtualizerEnabled
-                if (virt.enabled && virt.strengthSupported) {
-                    virt.setStrength(newState.virtualizerStrength.toShort())
+                val virtEnabled = enabled && newState.virtualizerEnabled
+                virt.enabled = virtEnabled
+                if (virtEnabled) {
+                    if (virt.strengthSupported) {
+                        val strength = newState.virtualizerStrength.coerceIn(0, 1000).toShort()
+                        virt.setStrength(strength)
+                    }
                 }
             } catch (e: Exception) {
                 Log.e("EqualizerManager", "Error applying Virtualizer state", e)
@@ -111,9 +122,11 @@ class EqualizerManager(private val context: Context) {
 
         loudnessEnhancer?.let { le ->
             try {
-                le.enabled = enabled && newState.loudnessEnabled
-                if (le.enabled) {
-                    le.setTargetGain(newState.loudnessGain.coerceAtMost(800))
+                val leEnabled = enabled && newState.loudnessEnabled
+                le.enabled = leEnabled
+                if (leEnabled) {
+                    val targetGainMb = newState.loudnessGain.coerceIn(0, 1000)
+                    le.setTargetGain(targetGainMb)
                 }
             } catch (e: Exception) {
                 Log.e("EqualizerManager", "Error applying LoudnessEnhancer state", e)
@@ -134,3 +147,5 @@ class EqualizerManager(private val context: Context) {
         currentSessionId = -1
     }
 }
+
+

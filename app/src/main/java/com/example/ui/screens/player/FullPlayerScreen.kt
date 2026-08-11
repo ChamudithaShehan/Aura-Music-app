@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
@@ -30,6 +31,7 @@ import com.example.domain.model.RepeatMode
 import com.example.domain.model.Song
 import com.example.ui.components.AudioVisualizerBars
 import com.example.ui.components.VinylDisc
+import com.example.ui.theme.AppleMusicRed
 
 @Composable
 fun FullPlayerScreen(
@@ -74,12 +76,11 @@ fun FullPlayerScreen(
     val curMin = curSec / 60
     val curRemSec = curSec % 60
     val formattedCurrent = String.format("%d:%02d", curMin, curRemSec)
-    
-    // Album Art Pulse Animation based on RMS
-    val pulseScale by animateFloatAsState(
-        targetValue = if (isPlaying) 1f + (rms * 0.12f) else 1f,
-        animationSpec = spring(dampingRatio = 0.75f, stiffness = Spring.StiffnessLow),
-        label = "pulse"
+
+    val albumArtScale by animateFloatAsState(
+        targetValue = if (isPlaying) 1.0f else 0.86f,
+        animationSpec = spring(dampingRatio = 0.8f, stiffness = Spring.StiffnessLow),
+        label = "artScale"
     )
 
     BoxWithConstraints(
@@ -88,78 +89,91 @@ fun FullPlayerScreen(
             .background(
                 Brush.verticalGradient(
                     colors = listOf(
-                        Color(0xFF1E1528),
-                        Color(0xFF0F0F12)
+                        Color(0xFF2C0B14),
+                        Color(0xFF140509),
+                        Color(0xFF070204)
                     )
                 )
             )
             .systemBarsPadding()
             .testTag("full_player_screen")
     ) {
-        val calculatedArtSize = (maxHeight * 0.36f).coerceIn(160.dp, 290.dp)
+        val calculatedArtSize = (maxHeight * 0.38f).coerceIn(200.dp, 330.dp)
 
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 24.dp, vertical = 12.dp),
+                .padding(horizontal = 28.dp, vertical = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            // Header Top Bar
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            // Drag grab handle bar & Header
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.fillMaxWidth()
             ) {
-                IconButton(
-                    onClick = onCloseClick,
-                    modifier = Modifier.testTag("close_player_button")
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.KeyboardArrowDown,
-                        contentDescription = "Collapse Player",
-                        tint = Color.White,
-                        modifier = Modifier.size(32.dp)
-                    )
-                }
+                // Top drag grab indicator
+                Box(
+                    modifier = Modifier
+                        .padding(top = 4.dp, bottom = 12.dp)
+                        .width(38.dp)
+                        .height(5.dp)
+                        .clip(RoundedCornerShape(50))
+                        .background(Color.White.copy(alpha = 0.3f))
+                )
 
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = "AURA AUDIO ENGINE",
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontWeight = FontWeight.ExtraBold,
-                            letterSpacing = 2.sp
-                        ),
-                        color = Color(0xFFD0BCFF)
-                    )
-                    Text(
-                        text = song.album,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color.White.copy(alpha = 0.7f),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-
-                IconButton(
-                    onClick = { isVinylMode = !isVinylMode },
-                    modifier = Modifier.testTag("toggle_vinyl_mode")
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.GraphicEq,
-                        contentDescription = "Toggle Vinyl Mode",
-                        tint = if (isVinylMode) Color(0xFFD0BCFF) else Color.White
-                    )
+                    IconButton(
+                        onClick = onCloseClick,
+                        modifier = Modifier.testTag("close_player_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.KeyboardArrowDown,
+                            contentDescription = "Collapse Player",
+                            tint = Color.White.copy(alpha = 0.8f),
+                            modifier = Modifier.size(30.dp)
+                        )
+                    }
+
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = "PLAYING FROM ALBUM",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 1.2.sp
+                            ),
+                            color = Color.White.copy(alpha = 0.5f)
+                        )
+                        Text(
+                            text = song.album,
+                            style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
+                            color = Color.White.copy(alpha = 0.9f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+
+                    IconButton(
+                        onClick = { isVinylMode = !isVinylMode },
+                        modifier = Modifier.testTag("toggle_vinyl_mode")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.GraphicEq,
+                            contentDescription = "Toggle Vinyl Mode",
+                            tint = if (isVinylMode) AppleMusicRed else Color.White.copy(alpha = 0.8f)
+                        )
+                    }
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Main Artwork or Vinyl Disc with Pulse Effect
+            // Apple Music Album Artwork Presentation
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
                     .pointerInput(Unit) {
                         detectHorizontalDragGestures { _, dragAmount ->
                             if (dragAmount < -50) {
@@ -177,16 +191,17 @@ fun FullPlayerScreen(
                         isPlaying = isPlaying,
                         modifier = Modifier
                             .size(calculatedArtSize)
-                            .scale(pulseScale)
+                            .scale(albumArtScale)
                     )
                 } else {
                     Box(
                         modifier = Modifier
                             .size(calculatedArtSize)
-                            .scale(pulseScale)
-                            .clip(RoundedCornerShape(32.dp))
+                            .scale(albumArtScale)
+                            .shadow(elevation = 28.dp, shape = RoundedCornerShape(20.dp), spotColor = AppleMusicRed.copy(alpha = 0.5f))
+                            .clip(RoundedCornerShape(20.dp))
                             .background(Color.White.copy(alpha = 0.08f))
-                            .border(BorderStroke(1.dp, Color.White.copy(alpha = 0.12f)), RoundedCornerShape(32.dp)),
+                            .border(BorderStroke(0.5.dp, Color.White.copy(alpha = 0.2f)), RoundedCornerShape(20.dp)),
                         contentAlignment = Alignment.Center
                     ) {
                         if (!song.albumArtUri.isNullOrEmpty()) {
@@ -200,65 +215,88 @@ fun FullPlayerScreen(
                             Icon(
                                 imageVector = Icons.Default.MusicNote,
                                 contentDescription = null,
-                                tint = Color(0xFFD0BCFF),
-                                modifier = Modifier.size(64.dp)
+                                tint = AppleMusicRed,
+                                modifier = Modifier.size(72.dp)
                             )
                         }
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Professional Visualizer
+            // Audio Visualizer subtle waveform
             AudioVisualizerBars(
                 bands = visualizerBands,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(64.dp)
-                    .padding(horizontal = 8.dp)
+                    .height(36.dp)
+                    .padding(horizontal = 12.dp)
             )
 
-            // Song Info & Favorite Heart
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = song.title,
-                        style = MaterialTheme.typography.titleLarge.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 24.sp,
-                            letterSpacing = (-0.5).sp
-                        ),
-                        color = Color.White,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        text = "${song.artist} • ${song.genre}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color.White.copy(alpha = 0.7f),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
+            // Song Info & Apple Music Lossless / Star Favorite Accent
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = song.title,
+                            style = MaterialTheme.typography.headlineMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 22.sp,
+                                letterSpacing = (-0.5).sp
+                            ),
+                            color = Color.White,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            text = song.artist,
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Normal,
+                                fontSize = 18.sp
+                            ),
+                            color = Color.White.copy(alpha = 0.7f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+
+                    IconButton(
+                        onClick = onToggleFavorite,
+                        modifier = Modifier.testTag("player_favorite_button")
+                    ) {
+                        Icon(
+                            imageVector = if (song.isFavorite) Icons.Default.Star else Icons.Default.StarBorder,
+                            contentDescription = "Favorite",
+                            tint = if (song.isFavorite) AppleMusicRed else Color.White.copy(alpha = 0.6f),
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
                 }
 
-                IconButton(
-                    onClick = onToggleFavorite,
-                    modifier = Modifier.testTag("player_favorite_button")
+                // Apple Lossless Badge
+                Surface(
+                    modifier = Modifier
+                        .padding(top = 6.dp)
+                        .clip(RoundedCornerShape(4.dp)),
+                    color = Color.White.copy(alpha = 0.12f)
                 ) {
-                    Icon(
-                        imageVector = if (song.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                        contentDescription = "Favorite",
-                        tint = if (song.isFavorite) Color(0xFFFF4081) else Color.White
+                    Text(
+                        text = "LOSSLESS",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSize = 9.sp,
+                            letterSpacing = 1.sp
+                        ),
+                        color = Color.White.copy(alpha = 0.8f),
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                     )
                 }
             }
 
-            // Seekbar Slider
+            // Scrubbing Progress Bar
             Column(modifier = Modifier.fillMaxWidth()) {
                 Slider(
                     value = progressRatio,
@@ -271,9 +309,9 @@ fun FullPlayerScreen(
                         isSeeking = false
                     },
                     colors = SliderDefaults.colors(
-                        thumbColor = MaterialTheme.colorScheme.primary,
-                        activeTrackColor = MaterialTheme.colorScheme.primary,
-                        inactiveTrackColor = Color.White.copy(alpha = 0.15f)
+                        thumbColor = Color.White,
+                        activeTrackColor = Color.White.copy(alpha = 0.85f),
+                        inactiveTrackColor = Color.White.copy(alpha = 0.2f)
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
@@ -281,23 +319,25 @@ fun FullPlayerScreen(
                 )
 
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 4.dp),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
                         text = formattedCurrent,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = Color.White.copy(alpha = 0.6f)
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium),
+                        color = Color.White.copy(alpha = 0.55f)
                     )
                     Text(
                         text = formattedDuration,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = Color.White.copy(alpha = 0.6f)
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium),
+                        color = Color.White.copy(alpha = 0.55f)
                     )
                 }
             }
 
-            // Playback Controls Row
+            // Apple Music Signature Transport Playback Controls
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly,
@@ -307,49 +347,44 @@ fun FullPlayerScreen(
                     Icon(
                         imageVector = Icons.Default.Shuffle,
                         contentDescription = "Shuffle",
-                        tint = if (shuffleModeEnabled) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.6f)
+                        tint = if (shuffleModeEnabled) AppleMusicRed else Color.White.copy(alpha = 0.45f),
+                        modifier = Modifier.size(24.dp)
                     )
                 }
 
                 IconButton(
                     onClick = onPreviousClick,
-                    modifier = Modifier.size(56.dp)
+                    modifier = Modifier.size(60.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.SkipPrevious,
                         contentDescription = "Previous Track",
                         tint = Color.White,
-                        modifier = Modifier.size(40.dp)
+                        modifier = Modifier.size(44.dp)
                     )
                 }
 
-                Surface(
-                    modifier = Modifier
-                        .size(76.dp)
-                        .clip(CircleShape),
-                    color = MaterialTheme.colorScheme.primary,
-                    tonalElevation = 8.dp,
-                    onClick = onPlayPauseClick
+                IconButton(
+                    onClick = onPlayPauseClick,
+                    modifier = Modifier.size(72.dp)
                 ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                            contentDescription = if (isPlaying) "Pause" else "Play",
-                            tint = Color.Black,
-                            modifier = Modifier.size(42.dp)
-                        )
-                    }
+                    Icon(
+                        imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                        contentDescription = if (isPlaying) "Pause" else "Play",
+                        tint = Color.White,
+                        modifier = Modifier.size(56.dp)
+                    )
                 }
 
                 IconButton(
                     onClick = onNextClick,
-                    modifier = Modifier.size(56.dp)
+                    modifier = Modifier.size(60.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.SkipNext,
                         contentDescription = "Next Track",
                         tint = Color.White,
-                        modifier = Modifier.size(40.dp)
+                        modifier = Modifier.size(44.dp)
                     )
                 }
 
@@ -357,32 +392,35 @@ fun FullPlayerScreen(
                     Icon(
                         imageVector = if (repeatMode == RepeatMode.ONE) Icons.Default.RepeatOne else Icons.Default.Repeat,
                         contentDescription = "Repeat",
-                        tint = if (repeatMode != RepeatMode.OFF) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.6f)
+                        tint = if (repeatMode != RepeatMode.OFF) AppleMusicRed else Color.White.copy(alpha = 0.45f),
+                        modifier = Modifier.size(24.dp)
                     )
                 }
             }
 
-            // Secondary Controls
+            // Bottom Action Bar (Lyrics, Equalizer, Sleep Timer, Speed)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 8.dp),
+                    .padding(bottom = 12.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = onOpenEqualizerClick) {
-                    Icon(
-                        imageVector = Icons.Default.Equalizer,
-                        contentDescription = "Equalizer",
-                        tint = Color.White.copy(alpha = 0.8f)
-                    )
-                }
-
                 IconButton(onClick = onOpenLyricsClick) {
                     Icon(
                         imageVector = Icons.Default.Lyrics,
                         contentDescription = "Lyrics",
-                        tint = Color.White.copy(alpha = 0.8f)
+                        tint = Color.White.copy(alpha = 0.75f),
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+
+                IconButton(onClick = onOpenEqualizerClick) {
+                    Icon(
+                        imageVector = Icons.Default.GraphicEq,
+                        contentDescription = "Equalizer",
+                        tint = Color.White.copy(alpha = 0.75f),
+                        modifier = Modifier.size(22.dp)
                     )
                 }
 
@@ -390,7 +428,8 @@ fun FullPlayerScreen(
                     Icon(
                         imageVector = Icons.Default.Timer,
                         contentDescription = "Sleep Timer",
-                        tint = Color.White.copy(alpha = 0.8f)
+                        tint = Color.White.copy(alpha = 0.75f),
+                        modifier = Modifier.size(22.dp)
                     )
                 }
 
@@ -407,16 +446,10 @@ fun FullPlayerScreen(
                     }
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.Speed,
-                            contentDescription = "Playback Speed",
-                            tint = Color.White.copy(alpha = 0.8f)
-                        )
                         Text(
                             text = "${playbackSpeed}x",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(start = 2.dp)
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                            color = AppleMusicRed
                         )
                     }
                 }
@@ -424,3 +457,4 @@ fun FullPlayerScreen(
         }
     }
 }
+

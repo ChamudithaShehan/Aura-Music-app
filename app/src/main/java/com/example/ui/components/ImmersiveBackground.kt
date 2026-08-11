@@ -31,56 +31,56 @@ fun ImmersiveBackground(
             val height = size.height
 
             if (!isLight) {
-                // Top-left deep purple atmospheric glow
+                // Top-left Apple Red signature ambient glow
                 drawCircle(
                     brush = Brush.radialGradient(
                         colors = listOf(
-                            Color(0xFF6750A4).copy(alpha = 0.45f),
-                            Color(0xFF6750A4).copy(alpha = 0.15f),
+                            Color(0xFFFA2D48).copy(alpha = 0.30f),
+                            Color(0xFFB01229).copy(alpha = 0.12f),
                             Color.Transparent
                         ),
-                        center = Offset(width * 0.15f, height * 0.10f),
-                        radius = width * 0.85f
+                        center = Offset(width * 0.20f, height * 0.15f),
+                        radius = width * 0.90f
                     ),
-                    center = Offset(width * 0.15f, height * 0.10f),
-                    radius = width * 0.85f
+                    center = Offset(width * 0.20f, height * 0.15f),
+                    radius = width * 0.90f
                 )
 
-                // Right-middle lavender glow
+                // Bottom-right deep magenta glow
                 drawCircle(
                     brush = Brush.radialGradient(
                         colors = listOf(
-                            Color(0xFFD0BCFF).copy(alpha = 0.35f),
-                            Color(0xFF8B5CF6).copy(alpha = 0.12f),
+                            Color(0xFF8B125C).copy(alpha = 0.25f),
+                            Color(0xFF3F0B30).copy(alpha = 0.10f),
                             Color.Transparent
                         ),
-                        center = Offset(width * 0.90f, height * 0.65f),
-                        radius = width * 0.75f
+                        center = Offset(width * 0.85f, height * 0.70f),
+                        radius = width * 0.80f
                     ),
-                    center = Offset(width * 0.90f, height * 0.65f),
-                    radius = width * 0.75f
+                    center = Offset(width * 0.85f, height * 0.70f),
+                    radius = width * 0.80f
                 )
 
-                // Subtle bottom-left glow accent
+                // Subtle middle blue-purple accent light
                 drawCircle(
                     brush = Brush.radialGradient(
                         colors = listOf(
-                            Color(0xFF3B0764).copy(alpha = 0.30f),
+                            Color(0xFF251F4F).copy(alpha = 0.35f),
                             Color.Transparent
                         ),
-                        center = Offset(width * 0.05f, height * 0.90f),
-                        radius = width * 0.60f
+                        center = Offset(width * 0.50f, height * 0.45f),
+                        radius = width * 0.70f
                     ),
-                    center = Offset(width * 0.05f, height * 0.90f),
-                    radius = width * 0.60f
+                    center = Offset(width * 0.50f, height * 0.45f),
+                    radius = width * 0.70f
                 )
             } else {
-                // Soft elegant glows for Light theme
+                // Light mode Apple Music subtle pinkish warm atmosphere
                 drawCircle(
                     brush = Brush.radialGradient(
                         colors = listOf(
-                            Color(0xFFD0BCFF).copy(alpha = 0.35f),
-                            Color(0xFFE8DEF8).copy(alpha = 0.15f),
+                            Color(0xFFFFD6DD).copy(alpha = 0.45f),
+                            Color(0xFFFFF0F2).copy(alpha = 0.20f),
                             Color.Transparent
                         ),
                         center = Offset(width * 0.15f, height * 0.10f),
@@ -93,13 +93,13 @@ fun ImmersiveBackground(
                 drawCircle(
                     brush = Brush.radialGradient(
                         colors = listOf(
-                            Color(0xFF6750A4).copy(alpha = 0.12f),
+                            Color(0xFFFFC0CB).copy(alpha = 0.25f),
                             Color.Transparent
                         ),
-                        center = Offset(width * 0.90f, height * 0.65f),
+                        center = Offset(width * 0.85f, height * 0.65f),
                         radius = width * 0.75f
                     ),
-                    center = Offset(width * 0.90f, height * 0.65f),
+                    center = Offset(width * 0.85f, height * 0.65f),
                     radius = width * 0.75f
                 )
             }
@@ -108,3 +108,4 @@ fun ImmersiveBackground(
         content()
     }
 }
+

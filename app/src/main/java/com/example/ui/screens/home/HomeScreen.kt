@@ -93,13 +93,13 @@ fun HomeScreen(
             ) {
                 Column {
                     Text(
-                        text = "Aura Music",
-                        style = MaterialTheme.typography.headlineMedium.copy(
+                        text = "Listen Now",
+                        style = MaterialTheme.typography.headlineLarge.copy(
                             fontWeight = FontWeight.Bold,
-                            fontSize = 26.sp,
-                            letterSpacing = (-0.5).sp
+                            fontSize = 32.sp,
+                            letterSpacing = (-0.8).sp
                         ),
-                        color = MaterialTheme.colorScheme.onBackground
+                        color = Color.White
                     )
                     Text(
                         text = "LOCAL AUDIO • ${allSongs.size} TRACKS",

@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.domain.model.AudioEqualizerState
 import com.example.ui.components.GlassCard
+import com.google.accompanist.permissions.isGranted
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -67,6 +68,16 @@ fun EqualizerScreen(
     val bandLabels = listOf("31", "62", "125", "250", "500", "1k", "2k", "4k", "8k", "16k")
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
+
+    // RECORD_AUDIO permission handling for Visualizer
+    val recordAudioPermissionState = com.google.accompanist.permissions.rememberPermissionState(
+        permission = android.Manifest.permission.RECORD_AUDIO
+    )
+    LaunchedEffect(Unit) {
+        if (!recordAudioPermissionState.status.isGranted) {
+            recordAudioPermissionState.launchPermissionRequest()
+        }
+    }
 
     Column(
         modifier = Modifier
