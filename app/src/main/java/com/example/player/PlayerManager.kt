@@ -10,6 +10,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
+import com.example.data.local.AudioFxPreferences
 import com.example.domain.model.AudioEqualizerState
 import com.example.domain.model.RepeatMode
 import com.example.domain.model.Song
@@ -26,7 +27,8 @@ import java.io.File
 class PlayerManager(
     private val context: Context,
     private val equalizerManager: EqualizerManager,
-    private val visualizerManager: VisualizerManager
+    private val visualizerManager: VisualizerManager,
+    private val audioFxPreferences: AudioFxPreferences? = null
 ) {
 
     private val scope = CoroutineScope(Dispatchers.Main + Job())
@@ -88,22 +90,42 @@ class PlayerManager(
         setupAudioEffects()
     }
 
+    private fun ensureAudioEffectsInitialized() {
+        val currentSessionId = exoPlayer.audioSessionId
+        if (currentSessionId != C.AUDIO_SESSION_ID_UNSET && currentSessionId > 0) {
+            equalizerManager.init(currentSessionId)
+            visualizerManager.init(currentSessionId)
+        }
+    }
+
     private fun setupPlayerListener() {
         exoPlayer.addListener(object : Player.Listener {
             override fun onIsPlayingChanged(isPlaying: Boolean) {
                 _isPlaying.value = isPlaying
+                visualizerManager.setPlaying(isPlaying)
+                if (isPlaying) {
+                    ensureAudioEffectsInitialized()
+                }
             }
 
             override fun onPlaybackStateChanged(playbackState: Int) {
                 if (playbackState == Player.STATE_READY) {
                     _durationMs.value = exoPlayer.duration.coerceAtLeast(0L)
+                    ensureAudioEffectsInitialized()
                 }
             }
 
             override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
                 val mediaId = mediaItem?.mediaId?.toLongOrNull()
-                _currentSong.value = _queue.value.find { it.id == mediaId }
+                val newSong = _queue.value.find { it.id == mediaId }
+                _currentSong.value = newSong
                 _durationMs.value = exoPlayer.duration.coerceAtLeast(0L)
+                ensureAudioEffectsInitialized()
+                if (newSong != null && reason != Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT) {
+                    scope.launch(Dispatchers.IO) {
+                        audioFxPreferences?.recordTrackPlayed(newSong.genre)
+                    }
+                }
             }
 
             override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
@@ -122,18 +144,14 @@ class PlayerManager(
     private fun setupAudioEffects() {
         exoPlayer.addListener(object : Player.Listener {
             override fun onAudioSessionIdChanged(audioSessionId: Int) {
-                if (audioSessionId != 0 && audioSessionId != -1) {
+                if (audioSessionId != C.AUDIO_SESSION_ID_UNSET && audioSessionId > 0) {
                     equalizerManager.init(audioSessionId)
                     visualizerManager.init(audioSessionId)
                 }
             }
         })
 
-        val currentSessionId = exoPlayer.audioSessionId
-        if (currentSessionId != 0 && currentSessionId != -1) {
-            equalizerManager.init(currentSessionId)
-            visualizerManager.init(currentSessionId)
-        }
+        ensureAudioEffectsInitialized()
     }
 
     private fun startPlaybackService() {
@@ -175,6 +193,13 @@ class PlayerManager(
         exoPlayer.prepare()
         exoPlayer.play()
         _currentSong.value = song
+        ensureAudioEffectsInitialized()
+    }
+
+    fun updateCurrentSongLyrics(lyrics: String) {
+        val song = _currentSong.value ?: return
+        _currentSong.value = song.copy(lyrics = lyrics)
+        _queue.value = _queue.value.map { if (it.id == song.id) it.copy(lyrics = lyrics) else it }
     }
 
     fun togglePlayPause() {
@@ -273,12 +298,21 @@ class PlayerManager(
 
     private fun startProgressTracker() {
         progressUpdateJob = scope.launch {
+            var counter250ms = 0
             while (true) {
                 if (exoPlayer.isPlaying) {
                     _currentPositionMs.value = exoPlayer.currentPosition.coerceAtLeast(0L)
                     _durationMs.value = exoPlayer.duration.coerceAtLeast(0L)
+                    counter250ms++
+                    if (counter250ms >= 4) {
+                        counter250ms = 0
+                        launch(Dispatchers.IO) {
+                            audioFxPreferences?.addPlaytimeSeconds(1L)
+                        }
+                    }
                     delay(250)
                 } else {
+                    counter250ms = 0
                     delay(500)
                 }
             }

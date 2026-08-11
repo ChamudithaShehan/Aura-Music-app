@@ -31,7 +31,7 @@ fun PrivacyPolicyScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF0F0817))
+            .background(MaterialTheme.colorScheme.background)
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 20.dp, vertical = 16.dp)
     ) {
@@ -40,12 +40,12 @@ fun PrivacyPolicyScreen(
             modifier = Modifier.fillMaxWidth()
         ) {
             IconButton(onClick = onBackClick) {
-                Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
+                Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onBackground)
             }
             Text(
                 text = "Privacy Policy",
                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                color = Color.White
+                color = MaterialTheme.colorScheme.onBackground
             )
         }
 
@@ -60,7 +60,7 @@ fun PrivacyPolicyScreen(
         Text(
             text = "Aura Music is a completely offline local music player application. We do NOT collect, transmit, or share any personal user data, listening history, or audio files to any external remote servers.",
             style = MaterialTheme.typography.bodyMedium,
-            color = Color.White.copy(alpha = 0.8f)
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -74,7 +74,7 @@ fun PrivacyPolicyScreen(
         Text(
             text = "Aura Music requests READ_EXTERNAL_STORAGE or READ_MEDIA_AUDIO permissions solely to scan, index, and play local audio files stored on your Android device. Metadata tag updates are performed directly on your local database.",
             style = MaterialTheme.typography.bodyMedium,
-            color = Color.White.copy(alpha = 0.8f)
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -88,7 +88,8 @@ fun PrivacyPolicyScreen(
         Text(
             text = "Equalizer and Bass Boost features use Android's native AudioFx DSP framework locally on your device hardware.",
             style = MaterialTheme.typography.bodyMedium,
-            color = Color.White.copy(alpha = 0.8f)
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }
+

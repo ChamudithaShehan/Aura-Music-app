@@ -78,11 +78,11 @@ fun BackupRestoreDialog(
     onRestoreClick: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    val cardBg = Color(0xFF202028)
-    val cardBorder = Color.White.copy(alpha = 0.08f)
+    val cardBg = MaterialTheme.colorScheme.surfaceVariant
+    val cardBorder = MaterialTheme.colorScheme.outlineVariant
     val driveGreen = Color(0xFF34A853)
     val driveBlue = Color(0xFF4285F4)
-    val textMuted = Color.White.copy(alpha = 0.6f)
+    val textMuted = MaterialTheme.colorScheme.onSurfaceVariant
 
     var showGoogleAuthPrompt by remember { mutableStateOf(false) }
     var inputEmail by remember { mutableStateOf("") }
@@ -94,9 +94,9 @@ fun BackupRestoreDialog(
 
         AlertDialog(
             onDismissRequest = { showGoogleAuthPrompt = false },
-            containerColor = Color(0xFF16161A),
+            containerColor = MaterialTheme.colorScheme.surface,
             shape = RoundedCornerShape(24.dp),
-            titleContentColor = Color.White,
+            titleContentColor = MaterialTheme.colorScheme.onSurface,
             title = {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -113,7 +113,7 @@ fun BackupRestoreDialog(
                     }
                     Spacer(modifier = Modifier.width(12.dp))
                     Column {
-                        Text("Google Sign-In", fontWeight = FontWeight.Bold, fontSize = 17.sp, color = Color.White)
+                        Text("Google Sign-In", fontWeight = FontWeight.Bold, fontSize = 17.sp, color = MaterialTheme.colorScheme.onSurface)
                         Text("Drive AppData Authentication", fontSize = 11.sp, color = textMuted)
                     }
                 }
@@ -123,7 +123,7 @@ fun BackupRestoreDialog(
                     Text(
                         text = "Enter your Google Account email and password to authorize Google Drive backup access:",
                         fontSize = 13.sp,
-                        color = Color.White.copy(alpha = 0.85f),
+                        color = MaterialTheme.colorScheme.onSurface,
                         lineHeight = 18.sp
                     )
 
@@ -142,9 +142,9 @@ fun BackupRestoreDialog(
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = driveBlue,
-                            unfocusedBorderColor = Color.White.copy(alpha = 0.2f),
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                             focusedLabelColor = driveBlue,
                             unfocusedLabelColor = textMuted
                         ),
@@ -170,9 +170,9 @@ fun BackupRestoreDialog(
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = driveBlue,
-                            unfocusedBorderColor = Color.White.copy(alpha = 0.2f),
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                             focusedLabelColor = driveBlue,
                             unfocusedLabelColor = textMuted
                         ),
@@ -196,7 +196,7 @@ fun BackupRestoreDialog(
                     colors = ButtonDefaults.buttonColors(containerColor = driveBlue),
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Text("Sign In", fontWeight = FontWeight.Bold)
+                    Text("Sign In", fontWeight = FontWeight.Bold, color = Color.White)
                 }
             },
             dismissButton = {
@@ -209,10 +209,10 @@ fun BackupRestoreDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = Color(0xFF16161A),
+        containerColor = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(24.dp),
-        titleContentColor = Color.White,
-        textContentColor = Color.White.copy(alpha = 0.85f),
+        titleContentColor = MaterialTheme.colorScheme.onSurface,
+        textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
         title = {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -238,7 +238,7 @@ fun BackupRestoreDialog(
                         text = "Backup & Restore",
                         fontWeight = FontWeight.Bold,
                         fontSize = 19.sp,
-                        color = Color.White
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = "Google Drive Sync & ZIP Compression",
@@ -298,7 +298,7 @@ fun BackupRestoreDialog(
                                             text = userEmail,
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 13.sp,
-                                            color = Color.White
+                                            color = MaterialTheme.colorScheme.onSurface
                                         )
                                     }
                                 }
@@ -350,7 +350,7 @@ fun BackupRestoreDialog(
                                     Text(
                                         text = "Google Drive Account",
                                         fontWeight = FontWeight.Bold,
-                                        color = Color.White,
+                                        color = MaterialTheme.colorScheme.onSurface,
                                         fontSize = 14.sp
                                     )
                                     Text(
@@ -365,7 +365,7 @@ fun BackupRestoreDialog(
                                     colors = ButtonDefaults.buttonColors(containerColor = driveBlue),
                                     shape = RoundedCornerShape(10.dp)
                                 ) {
-                                    Text("Log In", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                    Text("Log In", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
                                 }
                             }
                         }
@@ -418,7 +418,7 @@ fun BackupRestoreDialog(
                                     Text(
                                         text = "Google Drive App Storage",
                                         fontWeight = FontWeight.Bold,
-                                        color = Color.White,
+                                        color = MaterialTheme.colorScheme.onSurface,
                                         fontSize = 13.sp,
                                         maxLines = 1
                                     )
@@ -449,7 +449,7 @@ fun BackupRestoreDialog(
                                     .fillMaxWidth()
                                     .height(10.dp)
                                     .clip(RoundedCornerShape(5.dp))
-                                    .background(Color.White.copy(alpha = 0.1f))
+                                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f))
                             ) {
                                 val barWidthFraction = if (usedBytes > 0) storageFraction.coerceAtLeast(0.02f) else 0f
                                 if (barWidthFraction > 0f) {
@@ -475,7 +475,7 @@ fun BackupRestoreDialog(
                                 Text(
                                     text = if (usedBytes > 0) "Status: Safe" else "No backups yet",
                                     fontSize = 11.sp,
-                                    color = if (usedBytes > 0) driveGreen else Color.White.copy(alpha = 0.4f)
+                                    color = if (usedBytes > 0) driveGreen else textMuted
                                 )
                             }
                         }
@@ -485,7 +485,7 @@ fun BackupRestoreDialog(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(8.dp))
-                                .background(Color.Black.copy(alpha = 0.25f))
+                                .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f))
                                 .padding(horizontal = 10.dp, vertical = 8.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
@@ -501,14 +501,14 @@ fun BackupRestoreDialog(
                                 Text(
                                     text = "App Backup Archive (.zip)",
                                     fontSize = 11.sp,
-                                    color = Color.White.copy(alpha = 0.8f)
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
                             }
                             Text(
                                 text = usedMbFormatted,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                color = Color.White
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                         }
                     }
@@ -544,7 +544,7 @@ fun BackupRestoreDialog(
                                 Text(
                                     text = "Compressed Drive Backup",
                                     fontWeight = FontWeight.Bold,
-                                    color = Color.White,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                     fontSize = 13.sp,
                                     maxLines = 1
                                 )
@@ -564,7 +564,7 @@ fun BackupRestoreDialog(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clip(RoundedCornerShape(10.dp))
-                                    .background(Color.Black.copy(alpha = 0.25f))
+                                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f))
                                     .padding(10.dp)
                             ) {
                                 Row(
@@ -572,7 +572,7 @@ fun BackupRestoreDialog(
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
                                     Text("Last Backup:", fontSize = 12.sp, color = textMuted)
-                                    Text(lastBackupInfo.dateString, fontSize = 12.sp, color = Color.White, fontWeight = FontWeight.SemiBold)
+                                    Text(lastBackupInfo.dateString, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
                                 }
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Row(
@@ -596,7 +596,7 @@ fun BackupRestoreDialog(
                                     Text(
                                         "${lastBackupInfo.totalSongs} songs, ${lastBackupInfo.totalPlaylists} playlists",
                                         fontSize = 12.sp,
-                                        color = Color.White.copy(alpha = 0.9f)
+                                        color = MaterialTheme.colorScheme.onSurface
                                     )
                                 }
                             }
@@ -614,12 +614,12 @@ fun BackupRestoreDialog(
                                         .height(6.dp)
                                         .clip(CircleShape),
                                     color = driveBlue,
-                                    trackColor = Color.White.copy(alpha = 0.1f)
+                                    trackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
                                 )
                                 Text(
                                     text = statusMessage,
                                     fontSize = 12.sp,
-                                    color = Color.White.copy(alpha = 0.9f),
+                                    color = MaterialTheme.colorScheme.onSurface,
                                     fontWeight = FontWeight.Medium
                                 )
                             }
@@ -629,7 +629,7 @@ fun BackupRestoreDialog(
                             Text(
                                 text = "💡 Log in to your Google Account above to enable Backup & Restore.",
                                 fontSize = 11.sp,
-                                color = Color.White.copy(alpha = 0.5f),
+                                color = textMuted,
                                 modifier = Modifier.padding(vertical = 2.dp)
                             )
                         }
@@ -653,15 +653,16 @@ fun BackupRestoreDialog(
                                         strokeWidth = 2.dp
                                     )
                                     Spacer(modifier = Modifier.width(4.dp))
-                                    Text("Backing up...", fontSize = 12.sp, maxLines = 1)
+                                    Text("Backing up...", fontSize = 12.sp, maxLines = 1, color = Color.White)
                                 } else {
                                     Icon(
                                         imageVector = Icons.Default.CloudUpload,
                                         contentDescription = null,
+                                        tint = Color.White,
                                         modifier = Modifier.size(18.dp)
                                     )
                                     Spacer(modifier = Modifier.width(4.dp))
-                                    Text("Backup Now", fontSize = 12.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                                    Text("Backup Now", fontSize = 12.sp, fontWeight = FontWeight.Bold, maxLines = 1, color = Color.White)
                                 }
                             }
 
@@ -669,27 +670,27 @@ fun BackupRestoreDialog(
                                 onClick = onRestoreClick,
                                 enabled = userEmail != null && !isBackingUp && !isRestoring,
                                 shape = RoundedCornerShape(12.dp),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, if (userEmail != null) driveBlue else Color.White.copy(alpha = 0.2f)),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, if (userEmail != null) driveBlue else MaterialTheme.colorScheme.outlineVariant),
                                 contentPadding = PaddingValues(horizontal = 8.dp, vertical = 10.dp),
                                 modifier = Modifier.weight(1f)
                             ) {
                                 if (isRestoring) {
                                     CircularProgressIndicator(
                                         modifier = Modifier.size(16.dp),
-                                        color = Color.White,
+                                        color = driveBlue,
                                         strokeWidth = 2.dp
                                     )
                                     Spacer(modifier = Modifier.width(4.dp))
-                                    Text("Restoring...", fontSize = 12.sp, maxLines = 1)
+                                    Text("Restoring...", fontSize = 12.sp, maxLines = 1, color = driveBlue)
                                 } else {
                                     Icon(
                                         imageVector = Icons.Default.CloudDownload,
                                         contentDescription = null,
                                         modifier = Modifier.size(18.dp),
-                                        tint = if (userEmail != null) driveBlue else Color.White.copy(alpha = 0.4f)
+                                        tint = if (userEmail != null) driveBlue else textMuted
                                     )
                                     Spacer(modifier = Modifier.width(4.dp))
-                                    Text("Restore", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (userEmail != null) driveBlue else Color.White.copy(alpha = 0.4f), maxLines = 1)
+                                    Text("Restore", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (userEmail != null) driveBlue else textMuted, maxLines = 1)
                                 }
                             }
                         }
@@ -699,8 +700,9 @@ fun BackupRestoreDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Close", color = Color.White.copy(alpha = 0.8f), fontWeight = FontWeight.SemiBold)
+                Text("Close", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
             }
         }
     )
 }
+

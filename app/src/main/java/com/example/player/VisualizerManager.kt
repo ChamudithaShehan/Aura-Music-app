@@ -46,8 +46,19 @@ class VisualizerManager(private val context: Context) {
     private var lastDataReceivedMs = 0L
     private val minFrameIntervalMs = 33L // Throttle UI updates to ~30 FPS
 
+    private var isPlayingState: Boolean = false
+
     init {
         startFallbackTracker()
+    }
+
+    fun setPlaying(playing: Boolean) {
+        isPlayingState = playing
+        if (!playing) {
+            _fftData.value = FloatArray(32) { 0f }
+            _waveform.value = ByteArray(128) { 128.toByte() }
+            _rms.value = 0f
+        }
     }
 
     fun init(sessionId: Int) {
@@ -110,8 +121,13 @@ class VisualizerManager(private val context: Context) {
             var phase = 0f
             while (isActive) {
                 val now = SystemClock.elapsedRealtime()
-                // If hardware visualizer hasn't received actual audio frames recently, generate subtle organic visualizer data
-                if (now - lastDataReceivedMs > 500L) {
+                if (!isPlayingState) {
+                    // Flatline when music is stopped or paused
+                    _fftData.value = FloatArray(32) { 0f }
+                    _waveform.value = ByteArray(128) { 128.toByte() }
+                    _rms.value = 0f
+                } else if (now - lastDataReceivedMs > 500L) {
+                    // If music is playing but hardware visualizer isn't returning data (e.g. emulator limitation), generate dynamic spectrum animation
                     phase += 0.15f
                     val simFft = FloatArray(32)
                     val simWave = ByteArray(128)

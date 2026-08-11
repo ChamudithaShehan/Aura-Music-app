@@ -99,7 +99,7 @@ fun HomeScreen(
                             fontSize = 32.sp,
                             letterSpacing = (-0.8).sp
                         ),
-                        color = Color.White
+                        color = MaterialTheme.colorScheme.onBackground
                     )
                     Text(
                         text = "LOCAL AUDIO • ${allSongs.size} TRACKS",
@@ -121,7 +121,7 @@ fun HomeScreen(
                             .size(40.dp)
                             .clip(CircleShape)
                             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                            .border(BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)), CircleShape)
+                            .border(BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)), CircleShape)
                             .clickable { onNavigateToSearch() }
                             .testTag("home_search_button"),
                         contentAlignment = Alignment.Center
@@ -138,8 +138,8 @@ fun HomeScreen(
                         modifier = Modifier
                             .size(40.dp)
                             .clip(CircleShape)
-                            .background(Color.White.copy(alpha = 0.06f))
-                            .border(BorderStroke(1.dp, Color.White.copy(alpha = 0.12f)), CircleShape)
+                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                            .border(BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)), CircleShape)
                             .clickable { onNavigateToEqualizer() }
                             .testTag("home_equalizer_button"),
                         contentAlignment = Alignment.Center
@@ -147,7 +147,7 @@ fun HomeScreen(
                         Icon(
                             imageVector = Icons.Default.Equalizer,
                             contentDescription = "Equalizer",
-                            tint = Color(0xFFD0BCFF),
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -156,8 +156,8 @@ fun HomeScreen(
                         modifier = Modifier
                             .size(40.dp)
                             .clip(CircleShape)
-                            .background(Color.White.copy(alpha = 0.06f))
-                            .border(BorderStroke(1.dp, Color.White.copy(alpha = 0.12f)), CircleShape)
+                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                            .border(BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)), CircleShape)
                             .clickable { onRescanClick() }
                             .testTag("home_rescan_button"),
                         contentAlignment = Alignment.Center
@@ -165,7 +165,7 @@ fun HomeScreen(
                         Icon(
                             imageVector = Icons.Default.Refresh,
                             contentDescription = "Rescan Library",
-                            tint = Color.White,
+                            tint = MaterialTheme.colorScheme.onBackground,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -210,7 +210,10 @@ fun HomeScreen(
                                     .clip(RoundedCornerShape(20.dp))
                                     .background(
                                         Brush.linearGradient(
-                                            colors = listOf(Color(0xFF6750A4), Color(0xFF3B0764))
+                                            colors = listOf(
+                                                MaterialTheme.colorScheme.primary,
+                                                MaterialTheme.colorScheme.secondary
+                                            )
                                         )
                                     ),
                                 contentAlignment = Alignment.Center
@@ -226,7 +229,7 @@ fun HomeScreen(
                                     Icon(
                                         imageVector = Icons.Default.MusicNote,
                                         contentDescription = null,
-                                        tint = Color.White.copy(alpha = 0.8f),
+                                        tint = MaterialTheme.colorScheme.onPrimary,
                                         modifier = Modifier.size(36.dp)
                                     )
                                 }
@@ -238,13 +241,13 @@ fun HomeScreen(
                                         .padding(6.dp)
                                         .size(26.dp)
                                         .clip(CircleShape)
-                                        .background(Color(0xFFD0BCFF)),
+                                        .background(MaterialTheme.colorScheme.primary),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.PlayArrow,
                                         contentDescription = "Play",
-                                        tint = Color.Black,
+                                        tint = MaterialTheme.colorScheme.onPrimary,
                                         modifier = Modifier.size(16.dp)
                                     )
                                 }
@@ -260,7 +263,7 @@ fun HomeScreen(
                                         fontWeight = FontWeight.Bold,
                                         letterSpacing = 1.5.sp
                                     ),
-                                    color = Color(0xFFD0BCFF)
+                                    color = MaterialTheme.colorScheme.primary
                                 )
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
@@ -269,14 +272,14 @@ fun HomeScreen(
                                         fontWeight = FontWeight.SemiBold,
                                         fontSize = 17.sp
                                     ),
-                                    color = Color.White,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
                                 )
                                 Text(
                                     text = topSong.artist,
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = Color.White.copy(alpha = 0.60f),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
                                 )
@@ -293,14 +296,14 @@ fun HomeScreen(
                                             .weight(1f)
                                             .height(4.dp)
                                             .clip(CircleShape),
-                                        color = Color(0xFFD0BCFF),
-                                        trackColor = Color.White.copy(alpha = 0.1f)
+                                        color = MaterialTheme.colorScheme.primary,
+                                        trackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text(
                                         text = "1:24",
                                         style = MaterialTheme.typography.labelSmall,
-                                        color = Color.White.copy(alpha = 0.40f)
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             }
@@ -326,16 +329,16 @@ fun HomeScreen(
                     QuickGridCard(
                         title = "Favorites",
                         icon = Icons.Default.Favorite,
-                        iconTint = Color(0xFFD0BCFF),
-                        iconBg = Color(0xFF6750A4).copy(alpha = 0.30f),
+                        iconTint = MaterialTheme.colorScheme.primary,
+                        iconBg = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
                         modifier = Modifier.weight(1f),
                         onClick = { onNavigateToLibraryTab("FAVORITES") }
                     )
                     QuickGridCard(
                         title = "Albums",
                         icon = Icons.Default.Album,
-                        iconTint = Color(0xFF60A5FA),
-                        iconBg = Color(0xFF3B82F6).copy(alpha = 0.20f),
+                        iconTint = Color(0xFF3B82F6),
+                        iconBg = Color(0xFF3B82F6).copy(alpha = 0.15f),
                         modifier = Modifier.weight(1f),
                         onClick = { onNavigateToLibraryTab("ALBUMS") }
                     )
@@ -348,16 +351,16 @@ fun HomeScreen(
                     QuickGridCard(
                         title = "Artists",
                         icon = Icons.Default.Person,
-                        iconTint = Color(0xFF34D399),
-                        iconBg = Color(0xFF10B981).copy(alpha = 0.20f),
+                        iconTint = Color(0xFF10B981),
+                        iconBg = Color(0xFF10B981).copy(alpha = 0.15f),
                         modifier = Modifier.weight(1f),
                         onClick = { onNavigateToLibraryTab("ARTISTS") }
                     )
                     QuickGridCard(
                         title = "Folders",
                         icon = Icons.Default.Folder,
-                        iconTint = Color(0xFFFB923C),
-                        iconBg = Color(0xFFF97316).copy(alpha = 0.20f),
+                        iconTint = Color(0xFFF97316),
+                        iconBg = Color(0xFFF97316).copy(alpha = 0.15f),
                         modifier = Modifier.weight(1f),
                         onClick = { onNavigateToLibraryTab("FOLDERS") }
                     )
@@ -382,7 +385,7 @@ fun HomeScreen(
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 2.sp
                     ),
-                    color = Color.White.copy(alpha = 0.9f)
+                    color = MaterialTheme.colorScheme.onBackground
                 )
                 Text(
                     text = "View All",
@@ -390,7 +393,7 @@ fun HomeScreen(
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold
                     ),
-                    color = Color(0xFFD0BCFF),
+                    color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.clickable { onNavigateToLibraryTab("ALL") }
                 )
             }
@@ -423,7 +426,7 @@ fun HomeScreen(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 2.sp
                 ),
-                color = Color.White.copy(alpha = 0.9f),
+                color = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp)
             )
         }
@@ -455,8 +458,8 @@ private fun QuickGridCard(
     Row(
         modifier = modifier
             .clip(RoundedCornerShape(20.dp))
-            .background(Color.White.copy(alpha = 0.06f))
-            .border(BorderStroke(1.dp, Color.White.copy(alpha = 0.08f)), RoundedCornerShape(20.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+            .border(BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f)), RoundedCornerShape(20.dp))
             .clickable { onClick() }
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -482,7 +485,7 @@ private fun QuickGridCard(
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 14.sp
             ),
-            color = Color.White
+            color = MaterialTheme.colorScheme.onSurface
         )
     }
 }
@@ -502,8 +505,8 @@ private fun HorizontalSongCard(
             modifier = Modifier
                 .size(136.dp)
                 .clip(RoundedCornerShape(20.dp))
-                .background(Color.White.copy(alpha = 0.06f))
-                .border(BorderStroke(1.dp, Color.White.copy(alpha = 0.08f)), RoundedCornerShape(20.dp)),
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                .border(BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f)), RoundedCornerShape(20.dp)),
             contentAlignment = Alignment.Center
         ) {
             if (!song.albumArtUri.isNullOrEmpty()) {
@@ -517,7 +520,7 @@ private fun HorizontalSongCard(
                 Icon(
                     imageVector = Icons.Default.MusicNote,
                     contentDescription = null,
-                    tint = Color(0xFFD0BCFF),
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(40.dp)
                 )
             }
@@ -526,17 +529,18 @@ private fun HorizontalSongCard(
         Text(
             text = song.title,
             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-            color = Color.White,
+            color = MaterialTheme.colorScheme.onSurface,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
         Text(
             text = song.artist,
             style = MaterialTheme.typography.bodySmall,
-            color = Color.White.copy(alpha = 0.6f),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
     }
 }
+
 

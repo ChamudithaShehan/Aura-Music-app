@@ -1,6 +1,8 @@
 package com.example.player
 
 import android.content.Context
+import android.content.Intent
+import android.media.audiofx.AudioEffect
 import android.media.audiofx.BassBoost
 import android.media.audiofx.Equalizer
 import android.media.audiofx.LoudnessEnhancer
@@ -30,10 +32,20 @@ class EqualizerManager(private val context: Context) {
         
         release()
         currentSessionId = sessionId
+
+        try {
+            val intent = Intent(AudioEffect.ACTION_OPEN_AUDIO_EFFECT_CONTROL_SESSION).apply {
+                putExtra(AudioEffect.EXTRA_AUDIO_SESSION, sessionId)
+                putExtra(AudioEffect.EXTRA_PACKAGE_NAME, context.packageName)
+            }
+            context.sendBroadcast(intent)
+        } catch (e: Exception) {
+            Log.e("EqualizerManager", "Error broadcasting ACTION_OPEN_AUDIO_EFFECT_CONTROL_SESSION", e)
+        }
         
         try {
-            // Priority 0, audioSession = sessionId
             equalizer = Equalizer(0, sessionId)
+            Log.d("EqualizerManager", "Equalizer initialized for session $sessionId")
         } catch (e: Exception) {
             Log.e("EqualizerManager", "Error initializing Equalizer for session $sessionId", e)
             equalizer = null
@@ -41,6 +53,7 @@ class EqualizerManager(private val context: Context) {
 
         try {
             bassBoost = BassBoost(0, sessionId)
+            Log.d("EqualizerManager", "BassBoost initialized for session $sessionId")
         } catch (e: Exception) {
             Log.e("EqualizerManager", "Error initializing BassBoost for session $sessionId", e)
             bassBoost = null
@@ -48,6 +61,7 @@ class EqualizerManager(private val context: Context) {
 
         try {
             virtualizer = Virtualizer(0, sessionId)
+            Log.d("EqualizerManager", "Virtualizer initialized for session $sessionId")
         } catch (e: Exception) {
             Log.e("EqualizerManager", "Error initializing Virtualizer for session $sessionId", e)
             virtualizer = null
@@ -55,6 +69,7 @@ class EqualizerManager(private val context: Context) {
 
         try {
             loudnessEnhancer = LoudnessEnhancer(sessionId)
+            Log.d("EqualizerManager", "LoudnessEnhancer initialized for session $sessionId")
         } catch (e: Exception) {
             Log.e("EqualizerManager", "Error initializing LoudnessEnhancer for session $sessionId", e)
             loudnessEnhancer = null
@@ -78,7 +93,6 @@ class EqualizerManager(private val context: Context) {
                     val uiLevels = newState.bandLevels // 10 bands (-15dB to +15dB)
 
                     for (i in 0 until numBands) {
-                        // Map hardware band index `i` across the 10 UI bands
                         val uiIndex = if (numBands == 10) i else ((i.toFloat() / (numBands - 1)) * 9).toInt().coerceIn(0, 9)
                         val requestedDb = uiLevels.getOrElse(uiIndex) { 0 }
                         val milliBel = (requestedDb * 100).coerceIn(minLevelMb, maxLevelMb).toShort()
@@ -95,8 +109,8 @@ class EqualizerManager(private val context: Context) {
                 val bbEnabled = enabled && newState.bassBoostEnabled
                 bb.enabled = bbEnabled
                 if (bbEnabled) {
+                    val strength = newState.bassBoostStrength.coerceIn(0, 1000).toShort()
                     if (bb.strengthSupported) {
-                        val strength = newState.bassBoostStrength.coerceIn(0, 1000).toShort()
                         bb.setStrength(strength)
                     }
                 }
@@ -110,8 +124,8 @@ class EqualizerManager(private val context: Context) {
                 val virtEnabled = enabled && newState.virtualizerEnabled
                 virt.enabled = virtEnabled
                 if (virtEnabled) {
+                    val strength = newState.virtualizerStrength.coerceIn(0, 1000).toShort()
                     if (virt.strengthSupported) {
-                        val strength = newState.virtualizerStrength.coerceIn(0, 1000).toShort()
                         virt.setStrength(strength)
                     }
                 }
@@ -135,6 +149,18 @@ class EqualizerManager(private val context: Context) {
     }
 
     fun release() {
+        if (currentSessionId > 0) {
+            try {
+                val intent = Intent(AudioEffect.ACTION_CLOSE_AUDIO_EFFECT_CONTROL_SESSION).apply {
+                    putExtra(AudioEffect.EXTRA_AUDIO_SESSION, currentSessionId)
+                    putExtra(AudioEffect.EXTRA_PACKAGE_NAME, context.packageName)
+                }
+                context.sendBroadcast(intent)
+            } catch (e: Exception) {
+                Log.e("EqualizerManager", "Error broadcasting ACTION_CLOSE_AUDIO_EFFECT_CONTROL_SESSION", e)
+            }
+        }
+
         try { equalizer?.apply { enabled = false; release() } } catch (e: Exception) { Log.e("EqualizerManager", "Error releasing Equalizer", e) }
         try { bassBoost?.apply { enabled = false; release() } } catch (e: Exception) { Log.e("EqualizerManager", "Error releasing BassBoost", e) }
         try { virtualizer?.apply { enabled = false; release() } } catch (e: Exception) { Log.e("EqualizerManager", "Error releasing Virtualizer", e) }

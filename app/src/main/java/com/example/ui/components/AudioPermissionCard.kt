@@ -74,15 +74,15 @@ fun AudioPermissionCard(
                     modifier = Modifier
                         .size(48.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFF6750A4).copy(alpha = 0.3f))
-                        .border(BorderStroke(1.dp, Color(0xFFD0BCFF).copy(alpha = 0.3f)), CircleShape),
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f))
+                        .border(BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)), CircleShape),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center
                 ) {
                     Icon(
                         imageVector = if (shouldShowRationale) Icons.Default.FolderSpecial else Icons.Default.Lock,
                         contentDescription = "Permission Required",
-                        tint = Color(0xFFD0BCFF),
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(24.dp)
                     )
                 }
@@ -96,7 +96,7 @@ fun AudioPermissionCard(
                             fontWeight = FontWeight.Bold,
                             fontSize = 16.sp
                         ),
-                        color = Color.White
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
@@ -106,7 +106,7 @@ fun AudioPermissionCard(
                             "Grant audio access to auto-detect and stream local music from your storage."
                         },
                         style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                        color = Color.White.copy(alpha = 0.7f)
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -120,8 +120,8 @@ fun AudioPermissionCard(
                 Button(
                     onClick = { permissionState.launchPermissionRequest() },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFD0BCFF),
-                        contentColor = Color.Black
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
                     ),
                     shape = RoundedCornerShape(16.dp),
                     modifier = Modifier
@@ -142,20 +142,20 @@ fun AudioPermissionCard(
                         )
                         context.startActivity(intent)
                     },
-                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.2f)),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                     shape = RoundedCornerShape(16.dp),
                     modifier = Modifier.testTag("open_settings_button")
                 ) {
                     Icon(
                         imageVector = Icons.Default.Settings,
                         contentDescription = "Settings",
-                        tint = Color.White,
+                        tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = "Settings",
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onSurface,
                         style = MaterialTheme.typography.labelMedium
                     )
                 }

@@ -124,7 +124,7 @@ fun SongListItem(
         Text(
             text = song.formattedDuration,
             style = MaterialTheme.typography.labelSmall,
-            color = Color.White.copy(alpha = 0.5f)
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
         // Options Overflow Menu
@@ -136,7 +136,7 @@ fun SongListItem(
                 Icon(
                     imageVector = Icons.Default.MoreVert,
                     contentDescription = "More Options",
-                    tint = Color.White.copy(alpha = 0.7f)
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 

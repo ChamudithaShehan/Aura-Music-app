@@ -58,9 +58,9 @@ fun SleepTimerDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = Color(0xFF1E1E24),
-        titleContentColor = Color.White,
-        textContentColor = Color.White.copy(alpha = 0.8f),
+        containerColor = MaterialTheme.colorScheme.surface,
+        titleContentColor = MaterialTheme.colorScheme.onSurface,
+        textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
         title = {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -77,7 +77,7 @@ fun SleepTimerDialog(
                     text = "Sleep Timer",
                     fontWeight = FontWeight.Bold,
                     fontSize = 20.sp,
-                    color = Color.White
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             }
         },
@@ -87,7 +87,7 @@ fun SleepTimerDialog(
                     val mins = activeRemainingSec / 60
                     val secs = activeRemainingSec % 60
                     Card(
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFF282834)),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -98,7 +98,7 @@ fun SleepTimerDialog(
                             Text(
                                 text = "Active Countdown",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = Color.White.copy(alpha = 0.6f)
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
@@ -110,7 +110,7 @@ fun SleepTimerDialog(
                             Text(
                                 text = "Audio will pause automatically when completed",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = Color.White.copy(alpha = 0.5f)
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
@@ -118,7 +118,7 @@ fun SleepTimerDialog(
                     Text(
                         text = "Set a countdown timer after which music playback will pause automatically.",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color.White.copy(alpha = 0.7f)
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
@@ -144,13 +144,13 @@ fun SleepTimerDialog(
                                 },
                                 colors = RadioButtonDefaults.colors(
                                     selectedColor = MaterialTheme.colorScheme.primary,
-                                    unselectedColor = Color.White.copy(alpha = 0.4f)
+                                    unselectedColor = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = "$minutes Minutes",
-                                color = Color.White,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 fontWeight = if (!isCustom && selectedMinutes == minutes) FontWeight.Bold else FontWeight.Normal,
                                 fontSize = 15.sp
                             )
@@ -171,13 +171,13 @@ fun SleepTimerDialog(
                             onClick = { isCustom = true },
                             colors = RadioButtonDefaults.colors(
                                 selectedColor = MaterialTheme.colorScheme.primary,
-                                unselectedColor = Color.White.copy(alpha = 0.4f)
+                                unselectedColor = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = "Custom Minutes:",
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontWeight = if (isCustom) FontWeight.Bold else FontWeight.Normal,
                             fontSize = 15.sp
                         )
@@ -193,9 +193,9 @@ fun SleepTimerDialog(
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                 colors = OutlinedTextFieldDefaults.colors(
                                     focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                    unfocusedBorderColor = Color.White.copy(alpha = 0.3f),
-                                    focusedTextColor = Color.White,
-                                    unfocusedTextColor = Color.White
+                                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                                 )
                             )
                         }
@@ -215,7 +215,7 @@ fun SleepTimerDialog(
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
-                Text(if (activeRemainingSec != null) "Reset Timer" else "Start Timer")
+                Text(if (activeRemainingSec != null) "Reset Timer" else "Start Timer", color = MaterialTheme.colorScheme.onPrimary)
             }
         },
         dismissButton = {
@@ -228,7 +228,7 @@ fun SleepTimerDialog(
                 }
             } else {
                 TextButton(onClick = onDismiss) {
-                    Text("Close", color = Color.White.copy(alpha = 0.7f))
+                    Text("Close", color = MaterialTheme.colorScheme.primary)
                 }
             }
         }

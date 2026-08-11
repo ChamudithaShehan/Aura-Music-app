@@ -53,7 +53,7 @@ class AppContainer(private val context: Context) {
     }
 
     val playerManager: PlayerManager by lazy {
-        PlayerManager(context, equalizerManager, visualizerManager)
+        PlayerManager(context, equalizerManager, visualizerManager, audioFxPreferences)
     }
 
     val backupManager: com.example.data.backup.BackupManager by lazy {

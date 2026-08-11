@@ -3,6 +3,8 @@ package com.example.ui.screens.equalizer
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -37,6 +39,7 @@ import androidx.compose.ui.unit.sp
 import com.example.domain.model.AudioEqualizerState
 import com.example.ui.components.GlassCard
 import com.google.accompanist.permissions.isGranted
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -56,13 +59,11 @@ fun EqualizerScreen(
     onToggleLoudness: (Boolean) -> Unit,
     onLoudnessGainChange: (Int) -> Unit,
     onReset: () -> Unit,
-    onSavePreset: (String) -> Unit,
-    onDeletePreset: (String) -> Unit,
+    onSavePreset: ((String) -> Unit)? = null,
+    onDeletePreset: ((String) -> Unit)? = null,
     bottomPadding: Dp = 100.dp
 ) {
     var dropdownExpanded by remember { mutableStateOf(false) }
-    var showSaveDialog by remember { mutableStateOf(false) }
-    var newPresetName by remember { mutableStateOf("") }
     val haptic = LocalHapticFeedback.current
     
     val bandLabels = listOf("31", "62", "125", "250", "500", "1k", "2k", "4k", "8k", "16k")
@@ -172,63 +173,52 @@ fun EqualizerScreen(
         Spacer(modifier = Modifier.height(24.dp))
 
         // Preset Section
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            ExposedDropdownMenuBox(
-                expanded = dropdownExpanded,
-                onExpandedChange = { dropdownExpanded = !dropdownExpanded },
-                modifier = Modifier.weight(1f)
-            ) {
-                OutlinedTextField(
-                    value = equalizerState.presetName,
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Audio Profile") },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = dropdownExpanded) },
-                    modifier = Modifier.menuAnchor().fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
-                    )
-                )
-
-                ExposedDropdownMenu(
-                    expanded = dropdownExpanded,
-                    onDismissRequest = { dropdownExpanded = false },
-                    modifier = Modifier.background(MaterialTheme.colorScheme.surfaceColorAtElevation(4.dp))
-                ) {
-                    allPresets.forEach { preset ->
-                        DropdownMenuItem(
-                            text = { Text(preset, fontWeight = if (preset == equalizerState.presetName) FontWeight.Bold else FontWeight.Normal) },
-                            onClick = {
-                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                onSelectPreset(preset)
-                                dropdownExpanded = false
-                            },
-                            trailingIcon = {
-                                if (preset !in listOf("Normal", "Rock", "Pop", "Jazz", "Dance", "Hip Hop", "Classical", "Acoustic", "Electronic", "Metal", "Podcast", "Movie", "Bass Boost", "Treble Boost", "Gaming", "Night Mode")) {
-                                    IconButton(onClick = { onDeletePreset(preset) }) {
-                                        Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
-                                    }
-                                }
-                            }
-                        )
-                    }
-                }
-            }
-            
-            FilledTonalButton(
-                onClick = { showSaveDialog = true },
+        Box(modifier = Modifier.fillMaxWidth()) {
+            OutlinedTextField(
+                value = equalizerState.presetName,
+                onValueChange = {},
+                readOnly = true,
+                label = { Text("Audio Profile") },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = dropdownExpanded) },
+                modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.height(56.dp)
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+                )
+            )
+
+            // Transparent overlay box to guarantee click handling across all Compose versions
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .clip(RoundedCornerShape(16.dp))
+                    .clickable { dropdownExpanded = !dropdownExpanded }
+            )
+
+            DropdownMenu(
+                expanded = dropdownExpanded,
+                onDismissRequest = { dropdownExpanded = false },
+                modifier = Modifier
+                    .fillMaxWidth(0.9f)
+                    .background(MaterialTheme.colorScheme.surfaceColorAtElevation(6.dp))
             ) {
-                Icon(Icons.Default.Save, contentDescription = null, modifier = Modifier.size(20.dp))
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Save")
+                allPresets.forEach { preset ->
+                    DropdownMenuItem(
+                        text = {
+                            Text(
+                                text = preset,
+                                fontWeight = if (preset == equalizerState.presetName) FontWeight.Bold else FontWeight.Normal,
+                                color = if (preset == equalizerState.presetName) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                            )
+                        },
+                        onClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            onSelectPreset(preset)
+                            dropdownExpanded = false
+                        }
+                    )
+                }
             }
         }
 
@@ -358,41 +348,6 @@ fun EqualizerScreen(
         )
 
         Spacer(modifier = Modifier.height(bottomPadding))
-    }
-
-    if (showSaveDialog) {
-        AlertDialog(
-            onDismissRequest = { showSaveDialog = false },
-            title = { Text("Save Audio Profile") },
-            text = {
-                OutlinedTextField(
-                    value = newPresetName,
-                    onValueChange = { newPresetName = it },
-                    label = { Text("Profile Name") },
-                    singleLine = true,
-                    shape = RoundedCornerShape(16.dp)
-                )
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        if (newPresetName.isNotBlank()) {
-                            onSavePreset(newPresetName)
-                            newPresetName = ""
-                            showSaveDialog = false
-                        }
-                    },
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    Text("Save")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showSaveDialog = false }) {
-                    Text("Cancel")
-                }
-            }
-        )
     }
 }
 
@@ -555,7 +510,8 @@ private fun VerticalBandSlider(
 ) {
     val alpha = if (enabled) 1f else 0.3f
     val primaryColor = MaterialTheme.colorScheme.primary
-    
+    val currentOnValueChange by rememberUpdatedState(onValueChange)
+
     val animatedValue by animateFloatAsState(
         targetValue = value,
         animationSpec = spring(stiffness = Spring.StiffnessLow),
@@ -568,16 +524,39 @@ private fun VerticalBandSlider(
             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f * alpha))
             .pointerInput(enabled, valueRange) {
                 if (!enabled) return@pointerInput
-                detectVerticalDragGestures { change, dragAmount ->
-                    change.consume()
+                detectTapGestures { offset ->
                     val totalHeight = size.height.toFloat()
                     if (totalHeight > 0f) {
-                        val deltaRatio = -dragAmount / totalHeight
+                        val ratio = 1f - (offset.y / totalHeight).coerceIn(0f, 1f)
                         val span = valueRange.endInclusive - valueRange.start
-                        val newValue = (value + deltaRatio * span).coerceIn(valueRange.start, valueRange.endInclusive)
-                        onValueChange(newValue)
+                        val calcValue = (valueRange.start + ratio * span).roundToInt().toFloat()
+                        currentOnValueChange(calcValue)
                     }
                 }
+            }
+            .pointerInput(enabled, valueRange) {
+                if (!enabled) return@pointerInput
+                detectVerticalDragGestures(
+                    onDragStart = { offset ->
+                        val totalHeight = size.height.toFloat()
+                        if (totalHeight > 0f) {
+                            val ratio = 1f - (offset.y / totalHeight).coerceIn(0f, 1f)
+                            val span = valueRange.endInclusive - valueRange.start
+                            val calcValue = (valueRange.start + ratio * span).roundToInt().toFloat()
+                            currentOnValueChange(calcValue)
+                        }
+                    },
+                    onVerticalDrag = { change, _ ->
+                        change.consume()
+                        val totalHeight = size.height.toFloat()
+                        if (totalHeight > 0f) {
+                            val ratio = 1f - (change.position.y / totalHeight).coerceIn(0f, 1f)
+                            val span = valueRange.endInclusive - valueRange.start
+                            val calcValue = (valueRange.start + ratio * span).roundToInt().toFloat()
+                            currentOnValueChange(calcValue)
+                        }
+                    }
+                )
             },
         contentAlignment = Alignment.Center
     ) {

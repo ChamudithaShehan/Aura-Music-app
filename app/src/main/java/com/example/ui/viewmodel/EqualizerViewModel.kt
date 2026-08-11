@@ -49,8 +49,9 @@ class EqualizerViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val allPresetNames: StateFlow<List<String>> = customPresets.map { custom ->
-        builtInPresets.keys.toList() + custom.map { it.name }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), builtInPresets.keys.toList())
+        val names = builtInPresets.keys.toList() + custom.map { it.name }
+        listOf("Custom") + names
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), listOf("Custom") + builtInPresets.keys.toList())
 
     init {
         viewModelScope.launch {
@@ -65,6 +66,13 @@ class EqualizerViewModel(
     }
 
     fun selectPreset(name: String) {
+        if (name == "Custom") {
+            updateState(equalizerState.value.copy(
+                presetName = "Custom",
+                isCustom = true
+            ))
+            return
+        }
         val builtIn = builtInPresets[name]
         if (builtIn != null) {
             updateState(equalizerState.value.copy(

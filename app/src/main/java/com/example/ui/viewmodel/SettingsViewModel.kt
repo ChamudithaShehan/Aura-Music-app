@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.data.backup.BackupInfo
 import com.example.data.backup.BackupManager
 import com.example.data.local.AudioFxPreferences
+import com.example.domain.model.PlaytimeStats
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
@@ -32,6 +33,9 @@ class SettingsViewModel(
 
     val lockscreenArt: StateFlow<Boolean> = audioFxPreferences.lockscreenArt
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    val playtimeStats: StateFlow<PlaytimeStats> = audioFxPreferences.playtimeStats
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), PlaytimeStats())
 
     val userEmail: StateFlow<String?> = backupManager?.userEmail
         ?: kotlinx.coroutines.flow.MutableStateFlow(null)

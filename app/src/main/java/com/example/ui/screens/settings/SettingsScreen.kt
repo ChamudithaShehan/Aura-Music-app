@@ -77,6 +77,8 @@ import com.example.data.backup.BackupInfo
 import com.example.ui.components.BackupRestoreDialog
 import com.example.ui.components.SleepTimerDialog
 
+import com.example.domain.model.PlaytimeStats
+
 @Composable
 fun SettingsScreen(
     themeMode: String,
@@ -87,6 +89,7 @@ fun SettingsScreen(
     backupProgress: Float = 0f,
     statusMessage: String = "",
     lastBackupInfo: BackupInfo? = null,
+    playtimeStats: PlaytimeStats = PlaytimeStats(),
     language: String = "English",
     gaplessPlayback: Boolean = true,
     crossfadeSeconds: Int = 2,
@@ -123,8 +126,8 @@ fun SettingsScreen(
     var showAboutDialog by remember { mutableStateOf(false) }
     var showBackupRestoreDialog by remember { mutableStateOf(false) }
 
-    val cardBg = Color(0xFF16161A)
-    val dividerColor = Color.White.copy(alpha = 0.05f)
+    val cardBg = MaterialTheme.colorScheme.surfaceVariant
+    val dividerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
     val textPrimary = MaterialTheme.colorScheme.onBackground
     val premiumColor = Color(0xFFEA80FC)
 
@@ -149,7 +152,7 @@ fun SettingsScreen(
                     modifier = Modifier
                         .size(40.dp)
                         .clip(CircleShape)
-                        .background(Color.White.copy(alpha = 0.08f))
+                        .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -177,7 +180,7 @@ fun SettingsScreen(
             SettingRowItem(
                 icon = Icons.Default.BarChart,
                 title = "Playtime Statistics",
-                value = "12m 54s",
+                value = playtimeStats.formattedTotalTime,
                 onClick = { showPlaytimeDialog = true }
             )
             HorizontalDivider(color = dividerColor, modifier = Modifier.padding(horizontal = 16.dp))
@@ -190,7 +193,7 @@ fun SettingsScreen(
                 icon = Icons.Default.Backup,
                 title = "Backup & Restore",
                 value = backupValueText,
-                valueColor = if (userEmail != null) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.5f),
+                valueColor = if (userEmail != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                 onClick = { showBackupRestoreDialog = true }
             )
             HorizontalDivider(color = dividerColor, modifier = Modifier.padding(horizontal = 16.dp))
@@ -229,7 +232,7 @@ fun SettingsScreen(
                 icon = Icons.Default.Timer,
                 title = "Sleep Timer",
                 value = timerDisplayValue,
-                valueColor = if (sleepTimerRemainingSec != null) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.5f),
+                valueColor = if (sleepTimerRemainingSec != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                 onClick = { showSleepTimerDialog = true }
             )
             HorizontalDivider(color = dividerColor, modifier = Modifier.padding(horizontal = 16.dp))
@@ -327,8 +330,8 @@ fun SettingsScreen(
     if (showPlaytimeDialog) {
         AlertDialog(
             onDismissRequest = { showPlaytimeDialog = false },
-            containerColor = Color(0xFF1E1E24),
-            titleContentColor = Color.White,
+            containerColor = MaterialTheme.colorScheme.surface,
+            titleContentColor = MaterialTheme.colorScheme.onSurface,
             title = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
@@ -338,35 +341,35 @@ fun SettingsScreen(
                         modifier = Modifier.size(28.dp)
                     )
                     Spacer(modifier = Modifier.width(10.dp))
-                    Text("Playtime Statistics", fontWeight = FontWeight.Bold)
+                    Text("Playtime Statistics", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                 }
             },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Card(
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFF282834)),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(modifier = Modifier.padding(14.dp)) {
-                            Text("Total Listen Time", fontSize = 12.sp, color = Color.White.copy(alpha = 0.6f))
-                            Text("12m 54s", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                            Text("Total Listen Time", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(playtimeStats.formattedTotalTime, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                             Spacer(modifier = Modifier.height(6.dp))
-                            Text("Tracks Played: 18 songs", fontSize = 12.sp, color = Color.White.copy(alpha = 0.8f))
-                            Text("Daily Average: 24 mins", fontSize = 12.sp, color = Color.White.copy(alpha = 0.8f))
-                            Text("Favorite Genre: Acoustic / Pop", fontSize = 12.sp, color = Color.White.copy(alpha = 0.8f))
+                            Text("Tracks Played: ${playtimeStats.tracksPlayedCount} songs", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface)
+                            Text("Daily Average: ${playtimeStats.formattedDailyAverage}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface)
+                            Text("Favorite Genre: ${playtimeStats.favoriteGenre}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface)
                         }
                     }
                     Text(
                         "Listening metrics are calculated locally on your device for privacy.",
                         fontSize = 11.sp,
-                        color = Color.White.copy(alpha = 0.5f)
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             },
             confirmButton = {
                 TextButton(onClick = { showPlaytimeDialog = false }) {
-                    Text("Close", color = Color.White.copy(alpha = 0.8f))
+                    Text("Close", color = MaterialTheme.colorScheme.primary)
                 }
             }
         )
@@ -376,9 +379,9 @@ fun SettingsScreen(
     if (showHiddenFilesDialog) {
         AlertDialog(
             onDismissRequest = { showHiddenFilesDialog = false },
-            containerColor = Color(0xFF1E1E24),
-            titleContentColor = Color.White,
-            textContentColor = Color.White.copy(alpha = 0.8f),
+            containerColor = MaterialTheme.colorScheme.surface,
+            titleContentColor = MaterialTheme.colorScheme.onSurface,
+            textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
             title = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
@@ -388,7 +391,7 @@ fun SettingsScreen(
                         modifier = Modifier.size(28.dp)
                     )
                     Spacer(modifier = Modifier.width(10.dp))
-                    Text("Hidden Files (36 files)", fontWeight = FontWeight.Bold)
+                    Text("Hidden Files (36 files)", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                 }
             },
             text = {
@@ -396,11 +399,11 @@ fun SettingsScreen(
                     Text(
                         text = "WhatsApp Voice Messages, PTT recordings, and short audio notes are automatically filtered out from your music library.",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color.White.copy(alpha = 0.7f)
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
                     Card(
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFF282830)),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -410,20 +413,20 @@ fun SettingsScreen(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text("WhatsApp Voice Notes", fontWeight = FontWeight.SemiBold, color = Color.White)
+                                Text("WhatsApp Voice Notes", fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
                                 Text("36 files", color = MaterialTheme.colorScheme.primary, fontSize = 12.sp)
                             }
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 "ptt-*.opus, aud-*.opus, /WhatsApp/Media/Voice Notes/",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = Color.White.copy(alpha = 0.5f)
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
 
                     Card(
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFF282830)),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -433,14 +436,14 @@ fun SettingsScreen(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text("System Ringtones & Notifications", fontWeight = FontWeight.SemiBold, color = Color.White)
-                                Text("Filtered", color = Color.Green, fontSize = 12.sp)
+                                Text("System Ringtones & Notifications", fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
+                                Text("Filtered", color = Color(0xFF10B981), fontSize = 12.sp)
                             }
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 "Non-music audio under 10 seconds excluded",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = Color.White.copy(alpha = 0.5f)
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
@@ -456,12 +459,12 @@ fun SettingsScreen(
                 ) {
                     Icon(imageVector = Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text("Rescan Library")
+                    Text("Rescan Library", color = MaterialTheme.colorScheme.onPrimary)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showHiddenFilesDialog = false }) {
-                    Text("Close", color = Color.White.copy(alpha = 0.7f))
+                    Text("Close", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         )
@@ -472,9 +475,9 @@ fun SettingsScreen(
         val themeOptions = listOf("SYSTEM", "DARK", "LIGHT", "AMOLED", "DYNAMIC")
         AlertDialog(
             onDismissRequest = { showThemeDialog = false },
-            containerColor = Color(0xFF1E1E24),
-            titleContentColor = Color.White,
-            title = { Text("Select Theme Mode", fontWeight = FontWeight.Bold) },
+            containerColor = MaterialTheme.colorScheme.surface,
+            titleContentColor = MaterialTheme.colorScheme.onSurface,
+            title = { Text("Select Theme Mode", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface) },
             text = {
                 Column {
                     themeOptions.forEach { mode ->
@@ -489,7 +492,7 @@ fun SettingsScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text(text = getThemeDisplayLabel(mode), color = Color.White)
+                            Text(text = getThemeDisplayLabel(mode), color = MaterialTheme.colorScheme.onSurface)
                             if (themeMode == mode) {
                                 Icon(
                                     imageVector = Icons.Default.Check,
@@ -503,7 +506,7 @@ fun SettingsScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showThemeDialog = false }) {
-                    Text("Cancel", color = Color.White.copy(alpha = 0.7f))
+                    Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         )
@@ -529,8 +532,8 @@ fun SettingsScreen(
     if (showPremiumDialog) {
         AlertDialog(
             onDismissRequest = { showPremiumDialog = false },
-            containerColor = Color(0xFF1E1E24),
-            titleContentColor = Color.White,
+            containerColor = MaterialTheme.colorScheme.surface,
+            titleContentColor = MaterialTheme.colorScheme.onSurface,
             title = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
@@ -548,7 +551,7 @@ fun SettingsScreen(
                     Text(
                         "Your device has full permanent access to all pro audio features:",
                         fontSize = 13.sp,
-                        color = Color.White.copy(alpha = 0.8f)
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     listOf(
                         "⚡ High-Fidelity 24-Bit FLAC Audio Engine",
@@ -560,7 +563,7 @@ fun SettingsScreen(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(imageVector = Icons.Default.Check, contentDescription = null, tint = premiumColor, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text(feature, fontSize = 12.sp, color = Color.White)
+                            Text(feature, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface)
                         }
                     }
                 }
@@ -580,13 +583,13 @@ fun SettingsScreen(
     if (showRecentlyDeletedDialog) {
         AlertDialog(
             onDismissRequest = { showRecentlyDeletedDialog = false },
-            containerColor = Color(0xFF1E1E24),
-            titleContentColor = Color.White,
+            containerColor = MaterialTheme.colorScheme.surface,
+            titleContentColor = MaterialTheme.colorScheme.onSurface,
             title = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(imageVector = Icons.Default.Delete, contentDescription = null, tint = Color.Red, modifier = Modifier.size(26.dp))
                     Spacer(modifier = Modifier.width(10.dp))
-                    Text("Recently Deleted (0 files)", fontWeight = FontWeight.Bold)
+                    Text("Recently Deleted (0 files)", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                 }
             },
             text = {
@@ -594,22 +597,22 @@ fun SettingsScreen(
                     Text(
                         "Songs deleted within the app are retained in a temporary local trash cache for 30 days before permanent deletion.",
                         fontSize = 13.sp,
-                        color = Color.White.copy(alpha = 0.8f)
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Card(
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFF282834)),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                         shape = RoundedCornerShape(10.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Box(modifier = Modifier.padding(16.dp), contentAlignment = Alignment.Center) {
-                            Text("Trash Bin is empty", fontSize = 13.sp, color = Color.White.copy(alpha = 0.5f))
+                            Text("Trash Bin is empty", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
             },
             confirmButton = {
                 TextButton(onClick = { showRecentlyDeletedDialog = false }) {
-                    Text("Close", color = Color.White.copy(alpha = 0.8f))
+                    Text("Close", color = MaterialTheme.colorScheme.onSurface)
                 }
             }
         )
@@ -619,9 +622,9 @@ fun SettingsScreen(
     if (showPlaybackSettingsDialog) {
         AlertDialog(
             onDismissRequest = { showPlaybackSettingsDialog = false },
-            containerColor = Color(0xFF1E1E24),
-            titleContentColor = Color.White,
-            title = { Text("Playback Settings", fontWeight = FontWeight.Bold) },
+            containerColor = MaterialTheme.colorScheme.surface,
+            titleContentColor = MaterialTheme.colorScheme.onSurface,
+            title = { Text("Playback Settings", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                     Row(
@@ -630,17 +633,17 @@ fun SettingsScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("Gapless Playback", fontWeight = FontWeight.SemiBold, color = Color.White, fontSize = 14.sp)
-                            Text("Seamless transition between tracks", fontSize = 11.sp, color = Color.White.copy(alpha = 0.5f))
+                            Text("Gapless Playback", fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface, fontSize = 14.sp)
+                            Text("Seamless transition between tracks", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Switch(
                             checked = gaplessPlayback,
                             onCheckedChange = { onSetGaplessPlayback(it) },
-                            colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = MaterialTheme.colorScheme.primary)
+                            colors = SwitchDefaults.colors(checkedThumbColor = MaterialTheme.colorScheme.onPrimary, checkedTrackColor = MaterialTheme.colorScheme.primary)
                         )
                     }
 
-                    HorizontalDivider(color = Color.White.copy(alpha = 0.1f))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f))
 
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Row(
@@ -648,7 +651,7 @@ fun SettingsScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("Crossfade Duration", fontWeight = FontWeight.SemiBold, color = Color.White, fontSize = 14.sp)
+                            Text("Crossfade Duration", fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface, fontSize = 14.sp)
                             Text("${crossfadeSeconds}s", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, fontSize = 13.sp)
                         }
                         Row(
@@ -663,13 +666,13 @@ fun SettingsScreen(
                                     ),
                                     modifier = Modifier.weight(1f)
                                 ) {
-                                    Text(if (sec == 0) "Off" else "${sec}s", fontSize = 11.sp, color = Color.White)
+                                    Text(if (sec == 0) "Off" else "${sec}s", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface)
                                 }
                             }
                         }
                     }
 
-                    HorizontalDivider(color = Color.White.copy(alpha = 0.1f))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f))
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -677,13 +680,13 @@ fun SettingsScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("Pause on Disconnect", fontWeight = FontWeight.SemiBold, color = Color.White, fontSize = 14.sp)
-                            Text("Auto pause when headphones/Bluetooth disconnect", fontSize = 11.sp, color = Color.White.copy(alpha = 0.5f))
+                            Text("Pause on Disconnect", fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface, fontSize = 14.sp)
+                            Text("Auto pause when headphones/Bluetooth disconnect", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Switch(
                             checked = pauseOnDisconnect,
                             onCheckedChange = { onSetPauseOnDisconnect(it) },
-                            colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = MaterialTheme.colorScheme.primary)
+                            colors = SwitchDefaults.colors(checkedThumbColor = MaterialTheme.colorScheme.onPrimary, checkedTrackColor = MaterialTheme.colorScheme.primary)
                         )
                     }
                 }
@@ -700,9 +703,9 @@ fun SettingsScreen(
     if (showNotificationSettingsDialog) {
         AlertDialog(
             onDismissRequest = { showNotificationSettingsDialog = false },
-            containerColor = Color(0xFF1E1E24),
-            titleContentColor = Color.White,
-            title = { Text("Notification Settings", fontWeight = FontWeight.Bold) },
+            containerColor = MaterialTheme.colorScheme.surface,
+            titleContentColor = MaterialTheme.colorScheme.onSurface,
+            title = { Text("Notification Settings", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                     Row(
@@ -711,17 +714,17 @@ fun SettingsScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("Show Lockscreen Album Art", fontWeight = FontWeight.SemiBold, color = Color.White, fontSize = 14.sp)
-                            Text("Display artwork background on lock screen", fontSize = 11.sp, color = Color.White.copy(alpha = 0.5f))
+                            Text("Show Lockscreen Album Art", fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface, fontSize = 14.sp)
+                            Text("Display artwork background on lock screen", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Switch(
                             checked = lockscreenArt,
                             onCheckedChange = { onSetLockscreenArt(it) },
-                            colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = MaterialTheme.colorScheme.primary)
+                            colors = SwitchDefaults.colors(checkedThumbColor = MaterialTheme.colorScheme.onPrimary, checkedTrackColor = MaterialTheme.colorScheme.primary)
                         )
                     }
 
-                    HorizontalDivider(color = Color.White.copy(alpha = 0.1f))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f))
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -729,14 +732,14 @@ fun SettingsScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("Media Player Quick Controls", fontWeight = FontWeight.SemiBold, color = Color.White, fontSize = 14.sp)
-                            Text("Show media notification controls in Android shade", fontSize = 11.sp, color = Color.White.copy(alpha = 0.5f))
+                            Text("Media Player Quick Controls", fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface, fontSize = 14.sp)
+                            Text("Show media notification controls in Android shade", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Switch(
                             checked = true,
                             onCheckedChange = {},
                             enabled = false,
-                            colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = MaterialTheme.colorScheme.primary)
+                            colors = SwitchDefaults.colors(checkedThumbColor = MaterialTheme.colorScheme.onPrimary, checkedTrackColor = MaterialTheme.colorScheme.primary)
                         )
                     }
                 }
@@ -754,9 +757,9 @@ fun SettingsScreen(
         val languages = listOf("English", "Español", "Deutsch", "Français", "日本語", "Português", "हिन्दी")
         AlertDialog(
             onDismissRequest = { showLanguageDialog = false },
-            containerColor = Color(0xFF1E1E24),
-            titleContentColor = Color.White,
-            title = { Text("Select App Language", fontWeight = FontWeight.Bold) },
+            containerColor = MaterialTheme.colorScheme.surface,
+            titleContentColor = MaterialTheme.colorScheme.onSurface,
+            title = { Text("Select App Language", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface) },
             text = {
                 Column {
                     languages.forEach { lang ->
@@ -771,7 +774,7 @@ fun SettingsScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text(lang, color = Color.White)
+                            Text(lang, color = MaterialTheme.colorScheme.onSurface)
                             if (language == lang) {
                                 Icon(imageVector = Icons.Default.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                             }
@@ -781,7 +784,7 @@ fun SettingsScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showLanguageDialog = false }) {
-                    Text("Cancel", color = Color.White.copy(alpha = 0.7f))
+                    Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         )
@@ -794,18 +797,18 @@ fun SettingsScreen(
 
         AlertDialog(
             onDismissRequest = { showFeedbackDialog = false },
-            containerColor = Color(0xFF1E1E24),
-            titleContentColor = Color.White,
+            containerColor = MaterialTheme.colorScheme.surface,
+            titleContentColor = MaterialTheme.colorScheme.onSurface,
             title = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(imageVector = Icons.Default.Feedback, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(26.dp))
                     Spacer(modifier = Modifier.width(10.dp))
-                    Text("Play Store Feedback", fontWeight = FontWeight.Bold)
+                    Text("Play Store Feedback", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                 }
             },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text("How is your experience with Aura Music?", fontSize = 13.sp, color = Color.White.copy(alpha = 0.8f))
+                    Text("How is your experience with Aura Music?", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -816,7 +819,7 @@ fun SettingsScreen(
                                 Icon(
                                     imageVector = if (star <= rating) Icons.Default.Star else Icons.Default.StarOutline,
                                     contentDescription = "$star Stars",
-                                    tint = if (star <= rating) Color(0xFFFFC107) else Color.White.copy(alpha = 0.3f),
+                                    tint = if (star <= rating) Color(0xFFFFC107) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
                                     modifier = Modifier.size(30.dp)
                                 )
                             }
@@ -832,9 +835,9 @@ fun SettingsScreen(
                             .height(100.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = MaterialTheme.colorScheme.primary,
-                            unfocusedBorderColor = Color.White.copy(alpha = 0.3f),
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                         )
                     )
                 }
@@ -847,12 +850,12 @@ fun SettingsScreen(
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
-                    Text("Submit Review")
+                    Text("Submit Review", color = MaterialTheme.colorScheme.onPrimary)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showFeedbackDialog = false }) {
-                    Text("Cancel", color = Color.White.copy(alpha = 0.7f))
+                    Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         )
@@ -862,13 +865,13 @@ fun SettingsScreen(
     if (showAboutDialog) {
         AlertDialog(
             onDismissRequest = { showAboutDialog = false },
-            containerColor = Color(0xFF1E1E24),
-            titleContentColor = Color.White,
+            containerColor = MaterialTheme.colorScheme.surface,
+            titleContentColor = MaterialTheme.colorScheme.onSurface,
             title = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(imageVector = Icons.Default.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
                     Spacer(modifier = Modifier.width(10.dp))
-                    Text("Aura Music Player", fontWeight = FontWeight.Bold)
+                    Text("Aura Music Player", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                 }
             },
             text = {
@@ -877,10 +880,10 @@ fun SettingsScreen(
                     Text(
                         "Designed for high-fidelity offline audio playback, dynamic themes, and compressed Google Drive cloud sync.",
                         fontSize = 12.sp,
-                        color = Color.White.copy(alpha = 0.8f)
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text("Developed for Google Play Store release.", fontSize = 11.sp, color = Color.White.copy(alpha = 0.5f))
+                    Text("Developed for Google Play Store release.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f))
                 }
             },
             confirmButton = {
@@ -888,7 +891,7 @@ fun SettingsScreen(
                     onClick = { showAboutDialog = false },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
-                    Text("OK")
+                    Text("OK", color = MaterialTheme.colorScheme.onPrimary)
                 }
             }
         )
@@ -946,8 +949,8 @@ private fun SettingRowItem(
     title: String,
     value: String,
     onClick: () -> Unit,
-    titleColor: Color = Color.White,
-    valueColor: Color = Color.White.copy(alpha = 0.5f),
+    titleColor: Color = MaterialTheme.colorScheme.onSurface,
+    valueColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
     iconTint: Color = MaterialTheme.colorScheme.primary,
     iconBgColor: Color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
 ) {
@@ -993,11 +996,12 @@ private fun SettingRowItem(
         Icon(
             imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
             contentDescription = null,
-            tint = Color.White.copy(alpha = 0.3f),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(18.dp)
         )
     }
 }
+
 
 private fun getThemeDisplayLabel(mode: String): String {
     return when (mode) {

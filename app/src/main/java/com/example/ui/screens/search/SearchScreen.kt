@@ -113,7 +113,7 @@ fun SearchScreen(
                     Text(
                         text = "Recent Searches",
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = Color.White
+                        color = MaterialTheme.colorScheme.onBackground
                     )
                     Text(
                         text = "Clear All",
@@ -130,7 +130,7 @@ fun SearchScreen(
                         Row(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(16.dp))
-                                .background(Color.White.copy(alpha = 0.1f))
+                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
                                 .clickable {
                                     onQueryChange(query)
                                     onSubmitSearch(query)
@@ -145,7 +145,7 @@ fun SearchScreen(
                                 modifier = Modifier.size(16.dp)
                             )
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text(text = query, color = Color.White, fontSize = 14.sp)
+                            Text(text = query, color = MaterialTheme.colorScheme.onSurface, fontSize = 14.sp)
                         }
                     }
                 }
@@ -159,7 +159,7 @@ fun SearchScreen(
             Text(
                 text = "Results (${searchResults.size})",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
             )
 
@@ -168,7 +168,7 @@ fun SearchScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(text = "No matching songs found", color = Color.White.copy(alpha = 0.6f))
+                    Text(text = "No matching songs found", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             } else {
                 LazyColumn(

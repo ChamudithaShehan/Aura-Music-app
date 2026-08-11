@@ -132,6 +132,7 @@ fun MainAppContent(
     val crossfadeSeconds by settingsViewModel.crossfadeSeconds.collectAsState()
     val pauseOnDisconnect by settingsViewModel.pauseOnDisconnect.collectAsState()
     val lockscreenArt by settingsViewModel.lockscreenArt.collectAsState()
+    val playtimeStats by settingsViewModel.playtimeStats.collectAsState()
 
     // Dialog & UI states (preserved during configuration changes)
     var selectedLibraryTab by rememberSaveable { mutableStateOf("SONGS") }
@@ -177,11 +178,11 @@ fun MainAppContent(
                             .navigationBarsPadding()
                             .padding(horizontal = 16.dp, vertical = 8.dp)
                             .clip(RoundedCornerShape(28.dp))
-                            .border(BorderStroke(1.dp, Color.White.copy(alpha = 0.08f)), RoundedCornerShape(28.dp))
+                            .border(BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)), RoundedCornerShape(28.dp))
                     ) {
                         NavigationBar(
-                            containerColor = Color(0xFF1A1A1E),
-                            contentColor = Color.White
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.95f),
+                            contentColor = MaterialTheme.colorScheme.onSurface
                         ) {
                             val navItems = listOf(
                                 Triple(Screen.Home, "Home", Icons.Default.Home),
@@ -203,11 +204,11 @@ fun MainAppContent(
                                         )
                                     },
                                     colors = NavigationBarItemDefaults.colors(
-                                        selectedIconColor = Color.Black,
-                                        selectedTextColor = Color(0xFFD0BCFF),
-                                        indicatorColor = Color(0xFFD0BCFF),
-                                        unselectedIconColor = Color.White.copy(alpha = 0.5f),
-                                        unselectedTextColor = Color.White.copy(alpha = 0.5f)
+                                        selectedIconColor = MaterialTheme.colorScheme.onPrimary,
+                                        selectedTextColor = MaterialTheme.colorScheme.primary,
+                                        indicatorColor = MaterialTheme.colorScheme.primary,
+                                        unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 )
                             }
@@ -344,6 +345,7 @@ fun MainAppContent(
                         backupProgress = backupProgress,
                         statusMessage = statusMessage,
                         lastBackupInfo = lastBackupInfo,
+                        playtimeStats = playtimeStats,
                         language = language,
                         gaplessPlayback = gaplessPlayback,
                         crossfadeSeconds = crossfadeSeconds,
@@ -407,6 +409,8 @@ fun MainAppContent(
                         parsedLyrics = parsedLyrics,
                         currentPositionMs = currentPositionMs,
                         onSaveLyrics = { playerViewModel.saveLyricsForCurrentSong(it) },
+                        onSearchLyrics = { currentSong?.let { song -> playerViewModel.setSearchingLyricsSongId(song.id) } },
+                        onCheckClipboard = { ctx -> currentSong?.let { song -> playerViewModel.checkAndAutoSaveClipboardLyrics(ctx, song) } },
                         onSeekTo = { playerViewModel.seekTo(it) },
                         onBackClick = { navActions.popBack() }
                     )

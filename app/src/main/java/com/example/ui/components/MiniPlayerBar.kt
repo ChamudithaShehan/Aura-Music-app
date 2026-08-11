@@ -150,10 +150,10 @@ fun MiniPlayerBar(
                         }
                     )
                 }
-                .shadow(elevation = 16.dp, shape = RoundedCornerShape(16.dp), spotColor = Color.Black.copy(alpha = 0.4f))
+                .shadow(elevation = 16.dp, shape = RoundedCornerShape(16.dp), spotColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f))
                 .clip(RoundedCornerShape(16.dp))
-                .background(Color(0xF0252528))
-                .border(BorderStroke(0.5.dp, Color.White.copy(alpha = 0.15f)), RoundedCornerShape(16.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .border(BorderStroke(0.5.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)), RoundedCornerShape(16.dp))
                 .clickable { onExpandClick() }
                 .testTag("mini_player_bar")
         ) {
@@ -170,7 +170,7 @@ fun MiniPlayerBar(
                         modifier = Modifier
                             .size(42.dp)
                             .clip(RoundedCornerShape(8.dp))
-                            .background(Color.White.copy(alpha = 0.1f)),
+                            .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)),
                         contentAlignment = Alignment.Center
                     ) {
                         if (!song.albumArtUri.isNullOrEmpty()) {
@@ -202,14 +202,14 @@ fun MiniPlayerBar(
                                 fontWeight = FontWeight.SemiBold,
                                 fontSize = 15.sp
                             ),
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
                         Text(
                             text = song.artist,
                             style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                            color = Color.White.copy(alpha = 0.6f),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -225,7 +225,7 @@ fun MiniPlayerBar(
                         Icon(
                             imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                             contentDescription = if (isPlaying) "Pause" else "Play",
-                            tint = Color.White,
+                            tint = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.size(28.dp)
                         )
                     }
@@ -239,7 +239,7 @@ fun MiniPlayerBar(
                         Icon(
                             imageVector = Icons.Default.SkipNext,
                             contentDescription = "Next Track",
-                            tint = Color.White,
+                            tint = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.size(28.dp)
                         )
                     }

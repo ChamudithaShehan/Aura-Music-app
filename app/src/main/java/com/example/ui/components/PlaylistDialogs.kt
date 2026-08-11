@@ -184,10 +184,10 @@ fun AddToPlaylistDialog(
                             Icon(
                                 imageVector = Icons.Default.QueueMusic,
                                 contentDescription = null,
-                                tint = Color.White.copy(alpha = 0.7f)
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Spacer(modifier = Modifier.padding(start = 12.dp))
-                            Text(text = playlist.name, color = Color.White)
+                            Text(text = playlist.name, color = MaterialTheme.colorScheme.onSurface)
                         }
                     }
                 }

@@ -1,5 +1,6 @@
 package com.example.ui.theme
 
+import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
@@ -8,7 +9,11 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
 
 private val DarkColorScheme = darkColorScheme(
     primary = AuraPrimary,
@@ -17,11 +22,13 @@ private val DarkColorScheme = darkColorScheme(
     background = AuraDarkBackground,
     surface = AuraDarkSurface,
     surfaceVariant = AuraDarkSurfaceVariant,
-    onPrimary = AuraDarkBackground,
-    onSecondary = AuraDarkBackground,
+    onPrimary = Color.White,
+    onSecondary = Color.White,
+    onTertiary = Color.White,
     onBackground = AuraTextPrimary,
     onSurface = AuraTextPrimary,
-    onSurfaceVariant = AuraTextSecondary
+    onSurfaceVariant = AuraTextSecondary,
+    outlineVariant = Color(0x20FFFFFF)
 )
 
 private val AmoledColorScheme = darkColorScheme(
@@ -31,11 +38,13 @@ private val AmoledColorScheme = darkColorScheme(
     background = AuraAmoledBackground,
     surface = AuraAmoledSurface,
     surfaceVariant = AuraAmoledSurface,
-    onPrimary = AuraAmoledBackground,
-    onSecondary = AuraAmoledBackground,
+    onPrimary = Color.White,
+    onSecondary = Color.White,
+    onTertiary = Color.White,
     onBackground = AuraTextPrimary,
     onSurface = AuraTextPrimary,
-    onSurfaceVariant = AuraTextSecondary
+    onSurfaceVariant = AuraTextSecondary,
+    outlineVariant = Color(0x20FFFFFF)
 )
 
 private val LightColorScheme = lightColorScheme(
@@ -45,11 +54,13 @@ private val LightColorScheme = lightColorScheme(
     background = AuraLightBackground,
     surface = AuraLightSurface,
     surfaceVariant = AuraLightSurfaceVariant,
-    onPrimary = AuraTextPrimary,
-    onSecondary = AuraTextPrimary,
+    onPrimary = Color.White,
+    onSecondary = Color.White,
+    onTertiary = Color.White,
     onBackground = AuraLightTextPrimary,
     onSurface = AuraLightTextPrimary,
-    onSurfaceVariant = AuraLightTextSecondary
+    onSurfaceVariant = AuraLightTextSecondary,
+    outlineVariant = Color(0x20000000)
 )
 
 @Composable
@@ -58,6 +69,13 @@ fun AuraMusicTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {
+    val systemInDark = isSystemInDarkTheme()
+    val useDarkTheme = when (themeMode) {
+        "LIGHT" -> false
+        "DARK", "AMOLED" -> true
+        else -> systemInDark
+    }
+
     val context = LocalContext.current
     val colorScheme = when (themeMode) {
         "AMOLED" -> AmoledColorScheme
@@ -65,15 +83,27 @@ fun AuraMusicTheme(
         "DARK" -> DarkColorScheme
         "DYNAMIC" -> {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+                if (useDarkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
             } else {
-                if (darkTheme) DarkColorScheme else LightColorScheme
+                if (useDarkTheme) DarkColorScheme else LightColorScheme
             }
         }
         "SYSTEM" -> {
-            if (darkTheme) DarkColorScheme else LightColorScheme
+            if (useDarkTheme) DarkColorScheme else LightColorScheme
         }
-        else -> if (darkTheme) DarkColorScheme else LightColorScheme
+        else -> if (useDarkTheme) DarkColorScheme else LightColorScheme
+    }
+
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        SideEffect {
+            val window = (view.context as? Activity)?.window
+            if (window != null) {
+                val insetsController = WindowCompat.getInsetsController(window, view)
+                insetsController.isAppearanceLightStatusBars = !useDarkTheme
+                insetsController.isAppearanceLightNavigationBars = !useDarkTheme
+            }
+        }
     }
 
     MaterialTheme(
@@ -82,3 +112,4 @@ fun AuraMusicTheme(
         content = content
     )
 }
+
