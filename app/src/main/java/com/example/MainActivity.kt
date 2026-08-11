@@ -112,6 +112,7 @@ fun MainAppContent(
     val playbackSpeed by playerViewModel.playbackSpeed.collectAsState()
     val sleepTimerRemainingSec by playerViewModel.sleepTimerRemainingSec.collectAsState()
     val parsedLyrics by playerViewModel.parsedLyrics.collectAsState()
+    val lyricOffsetMs by playerViewModel.lyricOffsetMs.collectAsState()
 
     val equalizerState by equalizerViewModel.equalizerState.collectAsState()
     val allPresetNames by equalizerViewModel.allPresetNames.collectAsState()
@@ -408,6 +409,8 @@ fun MainAppContent(
                         song = currentSong,
                         parsedLyrics = parsedLyrics,
                         currentPositionMs = currentPositionMs,
+                        lyricOffsetMs = lyricOffsetMs,
+                        onAdjustOffsetMs = { playerViewModel.adjustLyricOffsetMs(it) },
                         onSaveLyrics = { playerViewModel.saveLyricsForCurrentSong(it) },
                         onSearchLyrics = { currentSong?.let { song -> playerViewModel.setSearchingLyricsSongId(song.id) } },
                         onCheckClipboard = { ctx -> currentSong?.let { song -> playerViewModel.checkAndAutoSaveClipboardLyrics(ctx, song) } },

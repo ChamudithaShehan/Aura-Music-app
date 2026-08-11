@@ -298,22 +298,22 @@ class PlayerManager(
 
     private fun startProgressTracker() {
         progressUpdateJob = scope.launch {
-            var counter250ms = 0
+            var counter100ms = 0
             while (true) {
                 if (exoPlayer.isPlaying) {
                     _currentPositionMs.value = exoPlayer.currentPosition.coerceAtLeast(0L)
                     _durationMs.value = exoPlayer.duration.coerceAtLeast(0L)
-                    counter250ms++
-                    if (counter250ms >= 4) {
-                        counter250ms = 0
+                    counter100ms++
+                    if (counter100ms >= 10) {
+                        counter100ms = 0
                         launch(Dispatchers.IO) {
                             audioFxPreferences?.addPlaytimeSeconds(1L)
                         }
                     }
-                    delay(250)
+                    delay(100)
                 } else {
-                    counter250ms = 0
-                    delay(500)
+                    counter100ms = 0
+                    delay(300)
                 }
             }
         }

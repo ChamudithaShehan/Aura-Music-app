@@ -31,12 +31,16 @@ class PlayerViewModel(
     private val _parsedLyrics = MutableStateFlow<List<LyricsLine>>(emptyList())
     val parsedLyrics: StateFlow<List<LyricsLine>> = _parsedLyrics.asStateFlow()
 
+    private val _lyricOffsetMs = MutableStateFlow(0L)
+    val lyricOffsetMs: StateFlow<Long> = _lyricOffsetMs.asStateFlow()
+
     init {
         currentSong.value?.let { song ->
             parseLyrics(song.lyrics)
         }
         viewModelScope.launch {
             currentSong.collect { song ->
+                _lyricOffsetMs.value = 0L
                 if (song != null) {
                     musicRepository.recordSongPlayed(song.id)
                     parseLyrics(song.lyrics)
@@ -45,6 +49,14 @@ class PlayerViewModel(
                 }
             }
         }
+    }
+
+    fun setLyricOffsetMs(offsetMs: Long) {
+        _lyricOffsetMs.value = offsetMs
+    }
+
+    fun adjustLyricOffsetMs(deltaMs: Long) {
+        _lyricOffsetMs.value = (_lyricOffsetMs.value + deltaMs).coerceIn(-15000L, 15000L)
     }
 
     fun playSong(song: Song, queue: List<Song> = listOf(song)) {
@@ -149,43 +161,75 @@ class PlayerViewModel(
         }
 
         val lines = mutableListOf<LyricsLine>()
-        val regex = Regex("""\[(\d{1,2}):(\d{2})(?:[\.:](\d{2,3}))?]""")
-        val hasLrcTime = regex.containsMatchIn(rawLyrics)
+        val timestampRegex = Regex("""\[(\d{1,3}):(\d{2})(?:[\.:](\d{1,3}))?\]""")
+        val offsetRegex = Regex("""\[offset:\s*([+-]?\d+)\]""", RegexOption.IGNORE_CASE)
+
+        // Parse global LRC header offset if present
+        var headerOffsetMs = 0L
+        offsetRegex.find(rawLyrics)?.let { match ->
+            headerOffsetMs = match.groupValues[1].toLongOrNull() ?: 0L
+        }
+
+        val hasLrcTime = timestampRegex.containsMatchIn(rawLyrics)
 
         if (hasLrcTime) {
-            rawLyrics.lines().forEach { line ->
-                val match = regex.find(line)
-                if (match != null) {
-                    val min = match.groupValues[1].toLongOrNull() ?: 0L
-                    val sec = match.groupValues[2].toLongOrNull() ?: 0L
-                    val msStr = match.groupValues[3]
-                    val msPart = when {
-                        msStr.length == 3 -> msStr.toLongOrNull() ?: 0L
-                        msStr.length == 2 -> (msStr.toLongOrNull() ?: 0L) * 10
-                        else -> 0L
-                    }
-                    val timeMs = (min * 60 * 1000) + (sec * 1000) + msPart
-                    val text = line.replace(regex, "").trim()
+            rawLyrics.lines().forEach { rawLine ->
+                val line = rawLine.trim()
+                if (line.isEmpty() || line.startsWith("[ar:", ignoreCase = true) ||
+                    line.startsWith("[ti:", ignoreCase = true) || line.startsWith("[al:", ignoreCase = true) ||
+                    line.startsWith("[by:", ignoreCase = true) || line.startsWith("[re:", ignoreCase = true) ||
+                    line.startsWith("[ve:", ignoreCase = true) || line.startsWith("[offset:", ignoreCase = true)
+                ) {
+                    return@forEach
+                }
+
+                val matches = timestampRegex.findAll(line).toList()
+                if (matches.isNotEmpty()) {
+                    val text = line.replace(timestampRegex, "").trim()
                     if (text.isNotEmpty()) {
-                        lines.add(LyricsLine(timeMs, text))
+                        for (match in matches) {
+                            val min = match.groupValues[1].toLongOrNull() ?: 0L
+                            val sec = match.groupValues[2].toLongOrNull() ?: 0L
+                            val msStr = match.groupValues[3]
+                            val msPart = when (msStr.length) {
+                                1 -> (msStr.toLongOrNull() ?: 0L) * 100
+                                2 -> (msStr.toLongOrNull() ?: 0L) * 10
+                                3 -> msStr.toLongOrNull() ?: 0L
+                                else -> 0L
+                            }
+                            val timeMs = ((min * 60 * 1000) + (sec * 1000) + msPart + headerOffsetMs).coerceAtLeast(0L)
+                            lines.add(LyricsLine(timeMs, text))
+                        }
                     }
                 }
             }
             _parsedLyrics.value = lines.sortedBy { it.timeMs }
         } else {
-            // Format plain text lyrics into structured lyric lines
+            // Format plain text lyrics into synchronized structured lyric lines
             val song = currentSong.value
-            val totalDurationMs = if (song != null && song.durationMs > 0) song.durationMs else 180000L
+            val liveDuration = durationMs.value
+            val totalDurationMs = when {
+                liveDuration > 0 -> liveDuration
+                song != null && song.durationMs > 0 -> song.durationMs
+                else -> 180000L
+            }
             val cleanLines = rawLyrics.lines().map { it.trim() }.filter { it.isNotEmpty() }
             if (cleanLines.isEmpty()) {
                 _parsedLyrics.value = emptyList()
                 return
             }
-            val lineIntervalMs = (totalDurationMs / cleanLines.size).coerceIn(2000L, 5000L)
+
+            // Distribute lines with realistic song intro offset and evenly spaced intervals
+            val startIntroMs = (totalDurationMs * 0.04).toLong().coerceIn(3000L, 10000L)
+            val endOutroMs = (totalDurationMs * 0.05).toLong().coerceIn(4000L, 15000L)
+            val availableMs = (totalDurationMs - startIntroMs - endOutroMs).coerceAtLeast(10000L)
+            val intervalMs = (availableMs / cleanLines.size).coerceAtLeast(2000L)
+
             cleanLines.forEachIndexed { index, text ->
-                lines.add(LyricsLine(index * lineIntervalMs, text))
+                val timeMs = startIntroMs + (index * intervalMs)
+                lines.add(LyricsLine(timeMs, text))
             }
-            _parsedLyrics.value = lines
+            _parsedLyrics.value = lines.sortedBy { it.timeMs }
         }
     }
 }
