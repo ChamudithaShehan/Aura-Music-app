@@ -171,6 +171,37 @@ class DriveBackupManager(private val context: Context) {
         try {
             verifyOrRefreshToken()
 
+            val helper = GoogleDriveBackupHelper(context)
+            val account = helper.getSignedInAccount()
+            if (account != null) {
+                try {
+                    val driveService = helper.getDriveService(account)
+                    val contentStream = com.google.api.client.http.ByteArrayContent("application/octet-stream", data)
+
+                    val fileList = driveService.files().list()
+                        .setSpaces("appDataFolder")
+                        .setQ("name = '$BACKUP_FILENAME' and trashed = false")
+                        .setFields("files(id, name)")
+                        .execute()
+
+                    val existingFile = fileList.files?.firstOrNull()
+                    if (existingFile != null) {
+                        driveService.files().update(existingFile.id, com.google.api.services.drive.model.File(), contentStream).execute()
+                        addLog("Google Drive Cloud Upload Updated successfully")
+                    } else {
+                        val fileMetadata = com.google.api.services.drive.model.File().apply {
+                            name = BACKUP_FILENAME
+                            parents = listOf("appDataFolder")
+                        }
+                        driveService.files().create(fileMetadata, contentStream).execute()
+                        addLog("Google Drive Cloud Upload Created successfully")
+                    }
+                } catch (driveErr: Exception) {
+                    Log.w(TAG, "Cloud sync to Google Drive REST API encountered issue: ${driveErr.message}", driveErr)
+                    addLog("Drive Cloud sync: ${driveErr.localizedMessage}")
+                }
+            }
+
             val driveDir = File(context.filesDir, DRIVE_APPDATA_DIR)
             if (!driveDir.exists()) {
                 driveDir.mkdirs()
@@ -191,13 +222,39 @@ class DriveBackupManager(private val context: Context) {
         }
     }
 
-    /**
-     * Encapsulates downloading encrypted data payload from Google Drive AppData space.
-     */
     suspend fun downloadFromDrive(): ByteArray? = withContext(Dispatchers.IO) {
         addLog("Downloading backup file from Google Drive AppData...")
         try {
             verifyOrRefreshToken()
+
+            val helper = GoogleDriveBackupHelper(context)
+            val account = helper.getSignedInAccount()
+            if (account != null) {
+                try {
+                    val driveService = helper.getDriveService(account)
+                    val fileList = driveService.files().list()
+                        .setSpaces("appDataFolder")
+                        .setQ("name = '$BACKUP_FILENAME' and trashed = false")
+                        .setFields("files(id, name)")
+                        .execute()
+
+                    val existingFile = fileList.files?.firstOrNull()
+                    if (existingFile != null) {
+                        val baos = java.io.ByteArrayOutputStream()
+                        driveService.files().get(existingFile.id).executeMediaAndDownloadTo(baos)
+                        val cloudData = baos.toByteArray()
+                        if (cloudData.isNotEmpty()) {
+                            addLog("Downloaded ${cloudData.size} bytes from Google Drive Cloud storage")
+                            val driveDir = File(context.filesDir, DRIVE_APPDATA_DIR)
+                            if (!driveDir.exists()) driveDir.mkdirs()
+                            File(driveDir, BACKUP_FILENAME).writeBytes(cloudData)
+                            return@withContext cloudData
+                        }
+                    }
+                } catch (driveErr: Exception) {
+                    Log.w(TAG, "Cloud download from Google Drive REST API encountered issue: ${driveErr.message}", driveErr)
+                }
+            }
 
             val driveDir = File(context.filesDir, DRIVE_APPDATA_DIR)
             val driveFile = File(driveDir, BACKUP_FILENAME)
@@ -217,9 +274,6 @@ class DriveBackupManager(private val context: Context) {
         }
     }
 
-    /**
-     * Computes SHA-256 checksum for byte integrity validation.
-     */
     fun computeChecksum(data: ByteArray): String {
         val digest = MessageDigest.getInstance("SHA-256")
         val hash = digest.digest(data)

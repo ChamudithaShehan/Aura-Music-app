@@ -72,7 +72,7 @@ fun BackupRestoreDialog(
     backupProgress: Float,
     statusMessage: String,
     lastBackupInfo: BackupInfo?,
-    onLoginClick: (String) -> Unit,
+    onLoginClick: () -> Unit,
     onLogoutClick: () -> Unit,
     onBackupClick: () -> Unit,
     onRestoreClick: () -> Unit,
@@ -83,129 +83,6 @@ fun BackupRestoreDialog(
     val driveGreen = Color(0xFF34A853)
     val driveBlue = Color(0xFF4285F4)
     val textMuted = MaterialTheme.colorScheme.onSurfaceVariant
-
-    var showGoogleAuthPrompt by remember { mutableStateOf(false) }
-    var inputEmail by remember { mutableStateOf("") }
-    var emailError by remember { mutableStateOf<String?>(null) }
-
-    if (showGoogleAuthPrompt) {
-        var passwordInput by remember { mutableStateOf("") }
-        var authError by remember { mutableStateOf<String?>(null) }
-
-        AlertDialog(
-            onDismissRequest = { showGoogleAuthPrompt = false },
-            containerColor = MaterialTheme.colorScheme.surface,
-            shape = RoundedCornerShape(24.dp),
-            titleContentColor = MaterialTheme.colorScheme.onSurface,
-            title = {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(driveBlue),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text("G", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 20.sp)
-                    }
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column {
-                        Text("Google Sign-In", fontWeight = FontWeight.Bold, fontSize = 17.sp, color = MaterialTheme.colorScheme.onSurface)
-                        Text("Drive AppData Authentication", fontSize = 11.sp, color = textMuted)
-                    }
-                }
-            },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                    Text(
-                        text = "Enter your Google Account email and password to authorize Google Drive backup access:",
-                        fontSize = 13.sp,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        lineHeight = 18.sp
-                    )
-
-                    OutlinedTextField(
-                        value = inputEmail,
-                        onValueChange = {
-                            inputEmail = it
-                            authError = null
-                        },
-                        label = { Text("Google Account Email") },
-                        placeholder = { Text("user@gmail.com") },
-                        leadingIcon = {
-                            Icon(imageVector = Icons.Default.Email, contentDescription = null, tint = driveBlue)
-                        },
-                        singleLine = true,
-                        shape = RoundedCornerShape(12.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = driveBlue,
-                            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
-                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                            focusedLabelColor = driveBlue,
-                            unfocusedLabelColor = textMuted
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    OutlinedTextField(
-                        value = passwordInput,
-                        onValueChange = {
-                            passwordInput = it
-                            authError = null
-                        },
-                        label = { Text("Password") },
-                        placeholder = { Text("••••••••••••") },
-                        leadingIcon = {
-                            Icon(imageVector = Icons.Default.Lock, contentDescription = null, tint = driveBlue)
-                        },
-                        visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                        singleLine = true,
-                        isError = authError != null,
-                        supportingText = authError?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },
-                        shape = RoundedCornerShape(12.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = driveBlue,
-                            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
-                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                            focusedLabelColor = driveBlue,
-                            unfocusedLabelColor = textMuted
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        val emailTrim = inputEmail.trim()
-                        if (emailTrim.isEmpty() || !emailTrim.contains("@")) {
-                            authError = "Please enter a valid Google email address"
-                        } else if (passwordInput.length < 6) {
-                            authError = "Password must be at least 6 characters"
-                        } else {
-                            onLoginClick(emailTrim)
-                            showGoogleAuthPrompt = false
-                        }
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = driveBlue),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text("Sign In", fontWeight = FontWeight.Bold, color = Color.White)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showGoogleAuthPrompt = false }) {
-                    Text("Cancel", color = textMuted)
-                }
-            }
-        )
-    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -361,7 +238,7 @@ fun BackupRestoreDialog(
                                 }
 
                                 Button(
-                                    onClick = { showGoogleAuthPrompt = true },
+                                    onClick = onLoginClick,
                                     colors = ButtonDefaults.buttonColors(containerColor = driveBlue),
                                     shape = RoundedCornerShape(10.dp)
                                 ) {

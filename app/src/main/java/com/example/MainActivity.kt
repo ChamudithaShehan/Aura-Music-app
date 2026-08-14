@@ -337,6 +337,23 @@ fun MainAppContent(
                     route = Screen.Settings,
                     deepLinks = listOf(navDeepLink { uriPattern = "aura://settings" })
                 ) {
+                    val context = androidx.compose.ui.platform.LocalContext.current
+                    val googleDriveBackupHelper = remember(context) { com.example.data.backup.GoogleDriveBackupHelper(context) }
+                    val googleSignInLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+                        contract = androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
+                    ) { result ->
+                        val task = com.google.android.gms.auth.api.signin.GoogleSignIn.getSignedInAccountFromIntent(result.data)
+                        try {
+                            val account = task.getResult(com.google.android.gms.common.api.ApiException::class.java)
+                            if (account != null) {
+                                settingsViewModel.onGoogleSignInSuccess(account)
+                                android.widget.Toast.makeText(context, "Signed in as ${account.email}", android.widget.Toast.LENGTH_SHORT).show()
+                            }
+                        } catch (e: com.google.android.gms.common.api.ApiException) {
+                            android.widget.Toast.makeText(context, "Google Sign-In cancelled or failed (${e.statusCode})", android.widget.Toast.LENGTH_SHORT).show()
+                        }
+                    }
+
                     SettingsScreen(
                         themeMode = themeMode,
                         sleepTimerRemainingSec = sleepTimerRemainingSec,
@@ -357,7 +374,7 @@ fun MainAppContent(
                         onNavigateToPrivacyPolicy = { navActions.navigateTo(Screen.Privacy) },
                         onStartSleepTimer = { playerViewModel.startSleepTimer(it) },
                         onCancelSleepTimer = { playerViewModel.cancelSleepTimer() },
-                        onLoginGoogleAccount = { settingsViewModel.loginGoogleAccount(it) },
+                        onLoginGoogleAccount = { googleSignInLauncher.launch(googleDriveBackupHelper.getGoogleSignInClient().signInIntent) },
                         onLogoutGoogleAccount = { settingsViewModel.logoutGoogleAccount() },
                         onPerformBackup = { settingsViewModel.performBackup() },
                         onPerformRestore = { settingsViewModel.performRestore() },

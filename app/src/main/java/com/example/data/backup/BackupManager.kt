@@ -393,7 +393,7 @@ class BackupManager(
                             playCount = s.optInt("playCount", 0),
                             lastPlayed = s.optLong("lastPlayed", s.optLong("lastPlayedTimestamp", 0L)),
                             lyrics = s.optString("lyrics", ""),
-                            albumArtUri = s.optString("albumArtUri", null)
+                            albumArtUri = if (s.has("albumArtUri") && !s.isNull("albumArtUri")) s.getString("albumArtUri") else null
                         )
                     )
                 }
@@ -407,7 +407,7 @@ class BackupManager(
                             name = p.getString("name"),
                             createdAt = p.optLong("createdAt", System.currentTimeMillis()),
                             isSmart = p.optBoolean("isSmart", false),
-                            artworkUri = p.optString("artworkUri", null)
+                            artworkUri = if (p.has("artworkUri") && !p.isNull("artworkUri")) p.getString("artworkUri") else null
                         )
                     )
                 }

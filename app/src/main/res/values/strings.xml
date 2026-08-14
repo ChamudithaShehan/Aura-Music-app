@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Aura Music</string>
+    <string name="default_web_client_id">10604639567-grr7l2td1h3r6fvvjbe271vivm30pbhf.apps.googleusercontent.com</string>
+    <string name="google_project_id">music-app-505208</string>
 </resources>

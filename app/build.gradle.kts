@@ -14,7 +14,7 @@ android {
   compileSdk { version = release(36) { minorApiLevel = 1 } }
 
   defaultConfig {
-    applicationId = "com.aistudio.auramusic.player"
+    applicationId = "com.chamuditha.auramusic.player"
     minSdk = 24
     targetSdk = 36
     versionCode = 1
@@ -49,6 +49,19 @@ android {
     compose = true
     buildConfig = true
   }
+  packaging {
+    resources {
+      excludes += "/META-INF/{AL2.0,LGPL2.1}"
+      excludes += "META-INF/DEPENDENCIES"
+      excludes += "META-INF/LICENSE"
+      excludes += "META-INF/LICENSE.txt"
+      excludes += "META-INF/license.txt"
+      excludes += "META-INF/NOTICE"
+      excludes += "META-INF/NOTICE.txt"
+      excludes += "META-INF/notice.txt"
+      excludes += "META-INF/ASL2.0"
+    }
+  }
   testOptions { unitTests { isIncludeAndroidResources = true } }
 }
 
@@ -70,6 +83,14 @@ googleServices { missingGoogleServicesStrategy = MissingGoogleServicesStrategy.W
 // Some unused dependencies are commented out below instead of being removed.
 // This makes it easy to add them back in the future if needed.
 dependencies {
+  // Google Play Services Auth & Google Drive API
+  implementation("com.google.android.gms:play-services-auth:21.0.0")
+  implementation("com.google.api-client:google-api-client-android:2.2.0")
+  implementation("com.google.apis:google-api-services-drive:v3-rev20230822-2.0.0") {
+    exclude(group = "org.apache.httpcomponents", module = "httpclient")
+  }
+  implementation("com.google.http-client:google-http-client-gson:1.43.3")
+
   implementation(platform(libs.androidx.compose.bom))
   implementation(platform(libs.firebase.bom))
   implementation(libs.accompanist.permissions)

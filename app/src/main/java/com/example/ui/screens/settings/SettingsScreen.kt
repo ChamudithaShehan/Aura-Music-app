@@ -100,7 +100,7 @@ fun SettingsScreen(
     onNavigateToPrivacyPolicy: () -> Unit,
     onStartSleepTimer: (Int) -> Unit = {},
     onCancelSleepTimer: () -> Unit = {},
-    onLoginGoogleAccount: (String) -> Unit = {},
+    onLoginGoogleAccount: () -> Unit = {},
     onLogoutGoogleAccount: () -> Unit = {},
     onPerformBackup: () -> Unit = {},
     onPerformRestore: () -> Unit = {},

@@ -91,7 +91,12 @@ class SettingsViewModel(
         }
     }
 
-    fun loginGoogleAccount(email: String = "chamudithagame3@gmail.com") {
+    fun onGoogleSignInSuccess(account: com.google.android.gms.auth.api.signin.GoogleSignInAccount) {
+        val email = account.email ?: "google_user@gmail.com"
+        backupManager?.loginGoogleAccount(email)
+    }
+
+    fun loginGoogleAccount(email: String) {
         backupManager?.loginGoogleAccount(email)
     }
 
